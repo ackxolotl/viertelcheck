@@ -1,0 +1,1597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Score any Munich address by what's within walking distance and compare flats with other people.">
+<style>:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); } body { margin: 0; } img { max-width: 100%; }</style>
+<title>Viertelcheck München</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: map-first explorer. Map and spot panel side by side; shortlist and priorities run as full-width bands below. */
+:root {
+  --bg: #eceee9; --panel: #f8f9f6; --ink: #1b1e24; --ink-2: #59606b; --ink-3: #8a909a; --line: #d4d7cf; --track: #e2e4de;
+  --accent: #c2410c; --accent-soft: #c2410c1f; --on-ink: #f8f9f6;
+  --land: #e5e6e0; --outside: #d9dbd3; --water: #a9c7da; --park: #b7d0a1; --road: #ffffff; --boundary: #6f7580;
+  --heat-0: #f6e7a1; --heat-1: #f3b15c; --heat-2: #de6a48; --heat-3: #a3306d; --heat-4: #461463; --heat-alpha: .74;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --font-body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #14161b; --panel: #1b1e25; --ink: #eceef1; --ink-2: #a4aab5; --ink-3: #737a86; --line: #2d313a; --track: #262a32;
+  --accent: #ff8a4c; --accent-soft: #ff8a4c26; --on-ink: #14161b;
+  --land: #1d2027; --outside: #16181d; --water: #1f3b4f; --park: #24402c; --road: #3b404b; --boundary: #9aa1ad;
+  --heat-0: #24296a; --heat-1: #652a8e; --heat-2: #c13a79; --heat-3: #f2783e; --heat-4: #fbd85a; --heat-alpha: .78;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #14161b; --panel: #1b1e25; --ink: #eceef1; --ink-2: #a4aab5; --ink-3: #737a86; --line: #2d313a; --track: #262a32;
+  --accent: #ff8a4c; --accent-soft: #ff8a4c26; --on-ink: #14161b;
+  --land: #1d2027; --outside: #16181d; --water: #1f3b4f; --park: #24402c; --road: #3b404b; --boundary: #9aa1ad;
+  --heat-0: #24296a; --heat-1: #652a8e; --heat-2: #c13a79; --heat-3: #f2783e; --heat-4: #fbd85a; --heat-alpha: .78;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
+.wrap { max-width: 1440px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+h2 { font-size: 30px; line-height: 1.05; }
+p { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.eyebrow { font-family: var(--font-display); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .12em; color: var(--ink-2); }
+.muted { color: var(--ink-2); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* header */
+.top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 520px); gap: 16px 32px; align-items: end; padding-top: 22px; }
+.brand h1 { font-size: 44px; line-height: .95; letter-spacing: -.005em; }
+.brand h1 span { color: var(--accent); }
+.brand p { margin-top: 8px; color: var(--ink-2); max-width: 60ch; }
+.search { position: relative; }
+.search label { display: block; margin-bottom: 6px; }
+.search input { width: 100%; padding: 12px 14px; border-radius: var(--radius); border: 1.5px solid var(--line); background: var(--panel); font-size: 16px; }
+.search input:focus { border-color: var(--ink); outline: none; }
+#sugg { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px); margin: 0; padding: 4px; list-style: none; background: var(--panel);
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 12px 30px #0000002b; max-height: 360px; overflow: auto; }
+#sugg li { padding: 8px 10px; border-radius: 7px; cursor: pointer; display: flex; gap: 10px; align-items: baseline; justify-content: space-between; }
+#sugg li[aria-selected="true"], #sugg li:hover { background: var(--track); }
+#sugg .k { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+
+/* explorer */
+.explore { display: grid; grid-template-columns: minmax(0, 1fr) 420px; height: min(80vh, 860px); min-height: 560px; border-radius: 14px; overflow: hidden;
+  border: 1px solid var(--line); background: var(--panel); }
+.mapwrap { position: relative; min-width: 0; background: var(--outside); }
+#map { display: block; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+#map.dragging { cursor: grabbing; }
+.map-ui { position: absolute; left: 12px; top: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; max-width: calc(100% - 24px); }
+.chip { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13.5px; box-shadow: 0 2px 8px #0000001a; }
+select.chip { padding-right: 28px; }
+.zoom { position: absolute; right: 12px; top: 12px; display: grid; gap: 6px; }
+.zoom button { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); font-size: 18px; line-height: 1; box-shadow: 0 2px 8px #0000001a; }
+.legend { position: absolute; left: 12px; bottom: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px 6px;
+  font-size: 12px; color: var(--ink-2); box-shadow: 0 2px 8px #0000001a; width: min(300px, calc(100% - 24px)); }
+.legend .ramp { height: 8px; border-radius: 4px; margin: 5px 0 3px; }
+.legend .ticks { display: flex; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.reachkey { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--line); }
+.reachkey i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; background: var(--ink); }
+.loadingpanel { padding: 22px 20px; color: var(--ink-2); font-family: var(--font-display); font-size: 18px; }
+.attrib { position: absolute; right: 8px; bottom: 6px; font-size: 11px; color: var(--ink-2); background: var(--panel); padding: 1px 6px; border-radius: 4px; opacity: .9; }
+.attrib a { color: inherit; }
+#tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--on-ink); font-size: 12.5px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; transform: translate(12px, -130%); }
+#loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink-2); font-family: var(--font-display); font-size: 20px; letter-spacing: .04em; }
+
+/* spot panel */
+.spot { border-left: 1px solid var(--line); overflow: auto; min-width: 0; display: flex; flex-direction: column; }
+.spot-head { padding: 18px 20px 14px; display: grid; gap: 12px; border-bottom: 1px solid var(--line); }
+.spot-title { font-family: var(--font-display); font-weight: 700; font-size: 26px; line-height: 1.05; }
+.spot-sub { color: var(--ink-2); font-size: 13.5px; margin-top: 3px; }
+.scorebox { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.bignum { font-family: var(--font-display); font-weight: 700; font-size: 64px; line-height: .85; font-variant-numeric: tabular-nums; }
+.tier { display: inline-block; font-family: var(--font-display); font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: .08em;
+  padding: 3px 9px; border-radius: 999px; color: var(--tc, var(--ink)); background: var(--tb, var(--track)); }
+.who { display: flex; gap: 10px; flex-wrap: wrap; font-size: 13.5px; color: var(--ink-2); margin-top: 6px; }
+.who b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c, var(--ink-3)); margin-right: 5px; vertical-align: 1px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1.5px solid var(--ink); background: var(--ink); color: var(--on-ink); border-radius: 8px; padding: 8px 14px; font-weight: 600; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.saveform { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.saveform label { display: grid; gap: 3px; font-size: 12.5px; color: var(--ink-2); }
+.saveform .full { grid-column: 1 / -1; }
+.saveform input { padding: 7px 9px; border-radius: 7px; border: 1px solid var(--line); background: var(--bg); font-size: 14px; min-width: 0; }
+.cats { list-style: none; margin: 0; padding: 6px 8px 14px; display: grid; }
+.cat { width: 100%; text-align: left; border: 0; background: transparent; border-radius: 9px; padding: 9px 12px; display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 30px; gap: 2px 10px; align-items: center; }
+.cat:hover { background: var(--track); }
+.cat[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.cname { font-weight: 600; }
+.bar { height: 7px; border-radius: 4px; background: var(--track); overflow: hidden; }
+.cat:hover .bar { background: var(--line); }
+.bar i { display: block; height: 100%; border-radius: 4px; background: var(--fill, var(--ink)); }
+.cval { font-family: var(--font-display); font-weight: 700; font-size: 18px; text-align: right; font-variant-numeric: tabular-nums; }
+.cdetail { grid-column: 1 / -1; font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+.line { display: inline-block; min-width: 26px; text-align: center; font-family: var(--font-display); font-weight: 700; font-size: 12.5px; line-height: 17px;
+  padding: 0 4px; border-radius: 3px; color: #fff; background: var(--lc, #555); margin-right: 2px; vertical-align: 1px; }
+.line.tram, .line.bus { border-radius: 9px; }
+.stoprow { display: block; }
+
+/* bands */
+.band-head { display: flex; justify-content: space-between; align-items: end; gap: 12px 24px; flex-wrap: wrap; margin-bottom: 14px; }
+.band-head p { max-width: 70ch; color: var(--ink-2); margin-top: 4px; }
+.status { font-size: 13px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.status input { padding: 5px 9px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel); font-size: 13.5px; width: 140px; }
+.syncnote { margin: -4px 0 14px; color: var(--ink-2); font-size: 13.5px; max-width: 80ch; display: grid; gap: 8px; }
+.syncnote input { width: 100%; padding: 7px 9px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel); font-size: 13px; }
+.people { display: flex; gap: 6px; }
+.people img { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--bg); }
+.verdict { display: grid; gap: 6px; margin-bottom: 14px; padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+.verdict p { max-width: 90ch; }
+.cmp-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+table.cmp { border-collapse: collapse; width: 100%; min-width: 520px; }
+.cmp th, .cmp td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+.cmp tbody th { font-weight: 600; white-space: nowrap; width: 170px; }
+.cmp thead th { vertical-align: top; min-width: 170px; }
+.cmp tr:last-child th, .cmp tr:last-child td { border-bottom: 0; }
+.cmp .pin { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--on-ink);
+  font-family: var(--font-display); font-weight: 700; font-size: 14px; margin-right: 6px; flex: none; }
+.cmp .ph { display: flex; align-items: flex-start; gap: 4px; }
+.cmp .ph button.name { border: 0; background: none; padding: 0; text-align: left; font-family: var(--font-display); font-weight: 700; font-size: 18px; line-height: 1.1; }
+.cmp .ph button.name:hover { text-decoration: underline; }
+.cmp .meta { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; display: grid; gap: 2px; }
+.cmp .meta a { color: var(--ink-2); }
+.cmp .cell { display: grid; grid-template-columns: minmax(40px, 1fr) 30px; gap: 8px; align-items: center; }
+.cmp .cell b { font-family: var(--font-display); font-size: 17px; text-align: right; font-variant-numeric: tabular-nums; }
+.cmp td.lead .cell b { color: var(--accent); }
+.cmp td.lead { background: var(--accent-soft); }
+.cmp tr.total td { font-family: var(--font-display); }
+.cmp tr.total .big { font-weight: 700; font-size: 26px; font-variant-numeric: tabular-nums; margin-right: 6px; }
+.cmp tr.sep th, .cmp tr.sep td { background: var(--bg); font-size: 12px; padding: 5px 12px; }
+.empty { padding: 28px 22px; display: grid; gap: 6px; justify-items: start; }
+.empty strong { font-family: var(--font-display); font-size: 20px; }
+.rm { border: 0; background: none; color: var(--ink-3); font-size: 18px; line-height: 1; padding: 2px 4px; margin-left: auto; }
+.rm:hover { color: var(--accent); }
+.confirm { display: flex; gap: 6px; margin-top: 6px; }
+
+/* priorities */
+.prio { display: grid; grid-template-columns: minmax(0, 1fr); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+.prow { display: grid; grid-template-columns: var(--cols, minmax(150px, 1.1fr) minmax(200px, 1.5fr) minmax(0, .6fr)); gap: 8px 16px; align-items: center;
+  padding: 9px 16px; border-bottom: 1px solid var(--line); }
+.prow:last-child { border-bottom: 0; }
+.prow.headrow { background: var(--bg); font-size: 12.5px; color: var(--ink-2); padding-block: 7px; }
+.prow .pl { font-weight: 600; }
+.prow .pl small { display: block; font-weight: 400; color: var(--ink-2); font-size: 12.5px; line-height: 1.3; }
+.slider { display: grid; grid-template-columns: minmax(80px, 1fr) 92px; gap: 10px; align-items: center; }
+.slider input { width: 100%; accent-color: var(--accent); }
+.slider span { font-size: 13px; color: var(--ink-2); }
+.pips { display: inline-flex; gap: 3px; }
+.pips i { width: 10px; height: 10px; border-radius: 2px; background: var(--track); border: 1px solid var(--line); }
+.pips i.on { background: var(--c, var(--ink)); border-color: transparent; }
+.disagree { margin-top: 12px; color: var(--ink-2); }
+
+/* method */
+.method { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 40px; padding-top: 6px; border-top: 1px solid var(--line); }
+.method h2 { font-size: 24px; margin: 18px 0 8px; }
+.method ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); max-width: 68ch; }
+.method li b { color: var(--ink); font-weight: 600; }
+.tiers { display: grid; gap: 4px; margin-top: 4px; }
+.tiers div { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+.tiers .sw { width: 34px; height: 12px; border-radius: 3px; }
+.method a { color: var(--ink); }
+
+#toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--on-ink);
+  padding: 9px 16px; border-radius: 9px; font-weight: 500; box-shadow: 0 8px 24px #0000003a; z-index: 50; max-width: calc(100% - 32px); }
+
+@media (max-width: 980px) {
+  .top { grid-template-columns: minmax(0, 1fr); }
+  .explore { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 0; }
+  .mapwrap { height: 62vh; min-height: 380px; }
+  .spot { border-left: 0; border-top: 1px solid var(--line); overflow: visible; }
+  .method { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .brand h1 { font-size: 36px; }
+  .prow { grid-template-columns: minmax(0, 1fr); }
+  .prow.headrow { display: none; }
+  .prow .others { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); }
+  .legend { width: calc(100% - 24px); }
+  .cat { grid-template-columns: minmax(0, 1fr) 70px 30px; }
+}
+@media (prefers-reduced-motion: no-preference) { .bar i { transition: width .35s ease; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Viertel<span>check</span></h1>
+      <p>How much city is at your doorstep? Every spot in Munich, scored by the shops, transit, food, parks and nightlife within walking distance. Save the flats you're looking at and compare them side by side.</p>
+    </div>
+    <div class="search">
+      <label class="eyebrow" for="q">Find a flat's address</label>
+      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="e.g. Ohlmüllerstraße 12, Giselastraße or Haidhausen" role="combobox" aria-expanded="false" aria-controls="sugg">
+      <ul id="sugg" role="listbox" hidden></ul>
+    </div>
+  </header>
+
+  <main class="explore">
+    <section class="mapwrap" aria-label="Map of Munich">
+      <canvas id="map"></canvas>
+      <div class="map-ui">
+        <select id="layer" class="chip" aria-label="Map colouring"></select>
+      </div>
+      <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zfit" aria-label="Show all of Munich" style="font-size:13px">⤢</button></div>
+      <div class="legend" id="legend"></div>
+      <div class="attrib">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</div>
+      <div id="tip" hidden></div>
+      <div id="loading">Loading Munich…</div>
+    </section>
+    <aside class="spot" id="spot" aria-live="polite"></aside>
+  </main>
+
+  <section id="shortlist">
+    <div class="band-head">
+      <div>
+        <h2>Shortlist</h2>
+        <p>Flats you've saved, scored with each person's priorities. The best value in every row is highlighted.</p>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+    <div class="syncnote" id="syncnote" hidden></div>
+    <div id="verdict"></div>
+    <div id="cmp"></div>
+  </section>
+
+  <section id="priorities">
+    <div class="band-head">
+      <div>
+        <h2>Priorities</h2>
+        <p>What matters to you? Your sliders change your overall score everywhere on the page. Everyone you compare with sets their own, so you can see where your priorities differ.</p>
+      </div>
+      <button class="btn ghost small" id="reset">Reset mine to defaults</button>
+    </div>
+    <div class="prio" id="prio"></div>
+    <p class="disagree" id="disagree"></p>
+  </section>
+
+  <section class="method">
+    <div>
+      <h2>How the score works</h2>
+      <ul>
+        <li><b>Walking time, not distance.</b> A supermarket 3 minutes away counts fully, at 10 minutes about a third, and past 20 minutes not at all. Parks, sport and culture get more slack: Englischer Garten 10 minutes away still counts 85%.</li>
+        <li><b>Choice counts too.</b> For cafés, restaurants, bars and shops, the 2nd, 3rd and 10th option add to the score, so a street with twelve cafés beats a street with one.</li>
+        <li><b>Transit counts lines.</b> Sendlinger Tor (six U-Bahn lines) beats a single-line stop. U- and S-Bahn weigh most, then tram, then bus.</li>
+        <li><b>Street life</b> counts every shop, café, bar and service within 500 m. It's the density that makes a street feel like a city.</li>
+        <li><b>Overall</b> is the average of the 13 categories, weighted by each person's priorities.</li>
+        <li><b>Real walking routes.</b> Every distance follows actual streets, paths, steps and bridges at 4.8 km/h, so the Isar, rail tracks, the Mittlerer Ring and fenced-off areas count as the barriers they are. On the map, the highlighted streets show how far you get in 5, 10 and 15 minutes from the selected spot.</li>
+        <li>Street life is the one count done as the crow flies, since it measures how dense the area around you is.</li>
+        <li id="datanote">Data: OpenStreetMap. Shops open and close, and some may be missing.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Reading the colours</h2>
+      <div class="tiers" id="tiers"></div>
+    </div>
+  </section>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+/* Viertelcheck scoring model — shared by the build script (Node) and the page.
+ * Distances are straight-line metres in a local projection centred on Munich,
+ * multiplied by a detour factor to approximate walking along streets. */
+(function (root) {
+  const LAT0 = 48.137, LON0 = 11.575;
+  const M_LAT = 111132;
+  const M_LON = 111320 * Math.cos(LAT0 * Math.PI / 180);
+  const DETOUR = 1.25;      // street network vs. straight line
+  const WALK = 80;          // metres per minute (4.8 km/h)
+  const MAX_MIN = 25;       // nothing further than this counts
+  const MAX_WALK = MAX_MIN * WALK;          // 2000 m along streets
+  const MAX_R = MAX_WALK / DETOUR;          // straight-line search radius without a street network
+
+  const toXY = (lat, lon) => [(lon - LON0) * M_LON, (lat - LAT0) * M_LAT];
+  const toLatLon = (x, y) => [LAT0 + y / M_LAT, LON0 + x / M_LON];
+  const minutes = d => d * DETOUR / WALK;
+
+  // Walking-time decay curves: [minutes, share of full value]
+  const PROFILES = {
+    daily:   [[3, 1], [6, .7], [10, .35], [15, .1], [20, 0]],
+    leisure: [[5, 1], [10, .65], [15, .35], [20, .12], [25, 0]],
+    rail:    [[4, 1], [8, .75], [12, .45], [16, .2], [22, 0]],
+    stop:    [[2, 1], [5, .65], [8, .3], [12, 0]],
+    park:    [[5, 1], [10, .85], [15, .55], [20, .25], [25, 0]],
+  };
+  function decay(profile, min) {
+    const p = PROFILES[profile];
+    if (min <= p[0][0]) return p[0][1];
+    for (let i = 1; i < p.length; i++) {
+      if (min <= p[i][0]) {
+        const [m0, v0] = p[i - 1], [m1, v1] = p[i];
+        return v0 + (v1 - v0) * (min - m0) / (m1 - m0);
+      }
+    }
+    return 0;
+  }
+
+  // Categories. Each group scores its nearest options (depth weights reward choice);
+  // a category blends its groups either as a weighted sum or as "any of these" (or).
+  const CATS = [
+    { id: 'groceries', label: 'Groceries', hint: 'Supermarkets, plus markets, butchers, greengrocers and kiosks',
+      groups: [
+        { id: 'supermarket', label: 'Supermarket', w: .8, depth: [1, .6, .4, .3], profile: 'daily' },
+        { id: 'foodshop', label: 'Food shop', w: .2, depth: [1, .6, .4], profile: 'daily' }] },
+    { id: 'transit', label: 'Transit', hint: 'U-Bahn and S-Bahn lines, trams and buses. More lines nearby scores higher',
+      combine: 'or',
+      groups: [
+        { id: 'rail', label: 'U-/S-Bahn', w: .9, depth: [1, .35, .25, .2, .15, .1], profile: 'rail', lines: true },
+        { id: 'tram', label: 'Tram', w: .55, depth: [1, .4, .25], profile: 'stop', lines: true },
+        { id: 'bus', label: 'Bus', w: .35, depth: [1, .4, .3, .2], profile: 'stop', lines: true }] },
+    { id: 'bakery', label: 'Bakery', hint: 'Bakeries and pastry shops',
+      groups: [{ id: 'bakery', label: 'Bakery', w: 1, depth: [1, .5, .3], profile: 'daily' }] },
+    { id: 'cafes', label: 'Cafés', hint: 'Cafés and ice-cream parlours',
+      groups: [{ id: 'cafe', label: 'Café', w: 1, depth: [1, .7, .5, .4, .35, .3, .3, .25, .25, .2, .2, .2], profile: 'daily' }] },
+    { id: 'food', label: 'Restaurants', hint: 'Restaurants, takeaways and food courts',
+      groups: [{ id: 'restaurant', label: 'Restaurant', w: 1, depth: [1, .8, .6, .5, .45, .4, .35, .3, .3, .3, .25, .25, .25, .2, .2, .2, .2, .2, .2, .2], profile: 'daily' }] },
+    { id: 'nightlife', label: 'Bars & beer gardens', hint: 'Bars, pubs, beer gardens and clubs',
+      groups: [{ id: 'bar', label: 'Bar', w: 1, depth: [1, .7, .5, .4, .35, .3, .3, .25, .25, .2], profile: 'daily' }] },
+    { id: 'health', label: 'Health', hint: 'Pharmacies, GPs, dentists and other practices',
+      groups: [
+        { id: 'pharmacy', label: 'Pharmacy', w: .4, depth: [1, .3], profile: 'daily' },
+        { id: 'doctor', label: 'Doctor', w: .6, depth: [1, .6, .5, .4, .3, .3, .25, .25], profile: 'daily' }] },
+    { id: 'errands', label: 'Errands', hint: 'Drugstores (dm, Rossmann, Müller), post, cash, hairdressers, laundries',
+      groups: [
+        { id: 'drugstore', label: 'Drugstore', w: .35, depth: [1, .3], profile: 'daily' },
+        { id: 'post', label: 'Post office', w: .2, depth: [1], profile: 'daily' },
+        { id: 'cash', label: 'Bank / ATM', w: .15, depth: [1], profile: 'daily' },
+        { id: 'service', label: 'Service', w: .3, depth: [1, .7, .5, .4, .3], profile: 'daily' }] },
+    { id: 'green', label: 'Parks & Isar', hint: 'Parks, woods, the Isar and lakes. Big parks count more than pocket parks',
+      groups: [{ id: 'park', label: 'Park', w: 1, depth: [1, .3, .15], profile: 'park', keyed: true }] },
+    { id: 'sport', label: 'Sport', hint: 'Gyms, sports centres and pools',
+      groups: [{ id: 'sport', label: 'Sport', w: 1, depth: [1, .6, .4, .3], profile: 'leisure' }] },
+    { id: 'culture', label: 'Culture', hint: 'Cinemas, theatres, museums, galleries and libraries',
+      groups: [{ id: 'culture', label: 'Culture', w: 1, depth: [1, .7, .5, .4, .35, .3, .3, .25, .25, .2], profile: 'leisure' }] },
+    { id: 'shops', label: 'Shops', hint: 'Clothes, books, electronics and every other kind of shop',
+      groups: [{ id: 'shop', label: 'Shop', w: 1, depth: [1, .8, .7, .6, .5, .5, .45, .4, .4, .35, .35, .3, .3, .3, .3, .25, .25, .25, .25, .25, .2, .2, .2, .2, .2, .2, .2, .2, .2, .2], profile: 'daily' }] },
+    { id: 'buzz', label: 'Street life', hint: 'How many shops, cafés, bars and services are within 500 m: the density that makes a street feel like a city',
+      count: { radius: 500, lo: 15, hi: 1000, from: ['supermarket', 'foodshop', 'bakery', 'cafe', 'restaurant', 'bar', 'pharmacy', 'doctor', 'drugstore', 'post', 'cash', 'service', 'culture', 'shop'] } },
+  ];
+
+  const DEFAULT_WEIGHTS = { groceries: 5, transit: 5, bakery: 3, cafes: 4, food: 3, nightlife: 3, health: 3,
+    errands: 3, green: 3, sport: 2, culture: 2, shops: 2, buzz: 5 };
+
+  const TIERS = [
+    [90, 'Big-city core'], [80, 'Very urban'], [68, 'Urban'], [55, 'Mixed'], [40, 'Quiet residential'], [0, 'Suburban'],
+  ];
+  const tier = s => TIERS.find(t => s >= t[0])[1];
+
+  // ---------- spatial index ----------
+  const CELL = 400;
+  // group = { xs: Float64Array|number[], ys, keys?: number[] (line or park id per point), mult?: number[] per key }
+  function indexGroup(g) {
+    const buckets = new Map();
+    for (let i = 0; i < g.xs.length; i++) {
+      const k = Math.floor(g.xs[i] / CELL) + ':' + Math.floor(g.ys[i] / CELL);
+      let b = buckets.get(k); if (!b) buckets.set(k, b = []); b.push(i);
+    }
+    g._b = buckets; return g;
+  }
+  function forNear(g, x, y, r, fn) {
+    const cx0 = Math.floor((x - r) / CELL), cx1 = Math.floor((x + r) / CELL);
+    const cy0 = Math.floor((y - r) / CELL), cy1 = Math.floor((y + r) / CELL);
+    const r2 = r * r;
+    for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
+      const b = g._b.get(cx + ':' + cy); if (!b) continue;
+      for (const i of b) { const dx = g.xs[i] - x, dy = g.ys[i] - y, d2 = dx * dx + dy * dy; if (d2 <= r2) fn(i, Math.sqrt(d2)); }
+    }
+  }
+
+  // nearest options of one group, by key (line / park) or by point
+  // nearest options of one group by walking distance (metres), keyed by line / park or by point
+  function nearest(g, x, y, walk) {
+    const best = new Map(); // key -> [walkMetres, pointIndex]
+    forNear(g, x, y, walk ? MAX_WALK : MAX_R, (i, d) => {
+      const wd = walk && g.se && g.se[i] >= 0 ? walk.distTo(g.se[i], g.st[i], g.sd[i]) : d * DETOUR;
+      if (!(wd <= MAX_WALK)) return;
+      const k = g.keys ? g.keys[i] : i;
+      const cur = best.get(k);
+      if (!cur || wd < cur[0]) best.set(k, [wd, i]);
+    });
+    return best;
+  }
+
+  function scoreGroup(spec, g, x, y, detail, walk) {
+    if (!g) return { score: 0, items: [] };
+    const best = nearest(g, x, y, walk);
+    const vals = [];
+    for (const [k, [d, i]] of best) {
+      const min = d / WALK;
+      const v = decay(spec.profile, min) * (g.mult ? g.mult[k] : 1);
+      if (v > 0 || detail) vals.push({ k, i, d, min, v });
+    }
+    vals.sort((a, b) => b.v - a.v || a.d - b.d);
+    let s = 0, tot = 0;
+    spec.depth.forEach((w, j) => { tot += w; if (vals[j]) s += w * vals[j].v; });
+    const out = { score: s / tot };
+    if (detail) {
+      out.items = vals.slice(0, 12);
+      out.within10 = vals.filter(v => v.min <= 10).length;
+    }
+    return out;
+  }
+
+  // Park/water outlines -> boundary sample points (every ~45 m), keyed by area index.
+  // areas: [{ m: multiplier, rings: [[x0,y0,x1,y1,...] absolute ints] }]
+  function sampleAreas(areas) {
+    const xs = [], ys = [], keys = [], mult = [];
+    areas.forEach((a, k) => {
+      mult.push(a.m);
+      for (const r of a.rings) for (let i = 2; i < r.length; i += 2) {
+        const ax = r[i - 2], ay = r[i - 1], bx = r[i], by = r[i + 1];
+        const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 45));
+        for (let j = 0; j < n; j++) { xs.push(Math.round(ax + (bx - ax) * j / n)); ys.push(Math.round(ay + (by - ay) * j / n)); keys.push(k); }
+      }
+    });
+    return { xs, ys, keys, mult };
+  }
+
+  // raw: {groupId: {xs, ys, keys?, mult?}} -> indexed groups + the combined street-life group
+  function prepare(raw, graph) {
+    const groups = {};
+    for (const id in raw) {
+      const g = groups[id] = indexGroup({ xs: raw[id].xs, ys: raw[id].ys, keys: raw[id].keys, mult: raw[id].mult });
+      if (graph) { // snap every point onto the street network once
+        const n = g.xs.length; g.se = new Int32Array(n); g.st = new Float32Array(n); g.sd = new Float32Array(n);
+        for (let i = 0; i < n; i++) { const s = graph.snap(g.xs[i], g.ys[i], 250); g.se[i] = s ? s.e : -1; g.st[i] = s ? s.t : 0; g.sd[i] = s ? s.d : 0; }
+      }
+    }
+    const from = CATS.find(c => c.count).count.from;
+    let n = 0; for (const id of from) n += raw[id] ? raw[id].xs.length : 0;
+    const xs = new Float64Array(n), ys = new Float64Array(n); let j = 0;
+    for (const id of from) if (raw[id]) for (let i = 0; i < raw[id].xs.length; i++) { xs[j] = raw[id].xs[i]; ys[j++] = raw[id].ys[i]; }
+    return { groups, all: indexGroup({ xs, ys }), graph: graph || null };
+  }
+
+  // ---------- walking network ----------
+  // net: { xs, ys: vertex coords (m); eu, ev: edge endpoints; el: edge length (m) }
+  function makeGraph(net) {
+    const nV = net.xs.length, nE = net.eu.length, xs = net.xs, ys = net.ys, eu = net.eu, ev = net.ev, el = net.el;
+    const start = new Int32Array(nV + 1);
+    for (let e = 0; e < nE; e++) { start[eu[e] + 1]++; start[ev[e] + 1]++; }
+    for (let i = 0; i < nV; i++) start[i + 1] += start[i];
+    const adjV = new Int32Array(2 * nE), adjL = new Float32Array(2 * nE), fill = start.slice(0, nV);
+    for (let e = 0; e < nE; e++) {
+      const u = eu[e], v = ev[e];
+      adjV[fill[u]] = v; adjL[fill[u]++] = el[e]; adjV[fill[v]] = u; adjL[fill[v]++] = el[e];
+    }
+    const EC = 100, buckets = new Map(), bk = (cx, cy) => (cx + 2000) * 4096 + (cy + 2000);
+    for (let e = 0; e < nE; e++) {
+      const ax = xs[eu[e]], ay = ys[eu[e]], bx = xs[ev[e]], by = ys[ev[e]];
+      for (let cx = Math.floor(Math.min(ax, bx) / EC); cx <= Math.floor(Math.max(ax, bx) / EC); cx++)
+        for (let cy = Math.floor(Math.min(ay, by) / EC); cy <= Math.floor(Math.max(ay, by) / EC); cy++) {
+          const k = bk(cx, cy); let b = buckets.get(k); if (!b) buckets.set(k, b = []); b.push(e);
+        }
+    }
+    // nearest point on any edge within maxR: {e, t (0..1 from eu to ev), d (metres off the network)}
+    function snap(x, y, maxR) {
+      let be = -1, bd = Infinity, bt = 0;
+      for (const r of [60, maxR]) {
+        for (let cx = Math.floor((x - r) / EC); cx <= Math.floor((x + r) / EC); cx++)
+          for (let cy = Math.floor((y - r) / EC); cy <= Math.floor((y + r) / EC); cy++) {
+            const b = buckets.get(bk(cx, cy)); if (!b) continue;
+            for (const e of b) {
+              const ax = xs[eu[e]], ay = ys[eu[e]], dx = xs[ev[e]] - ax, dy = ys[ev[e]] - ay, L2 = dx * dx + dy * dy;
+              let t = L2 ? ((x - ax) * dx + (y - ay) * dy) / L2 : 0; t = t < 0 ? 0 : t > 1 ? 1 : t;
+              const d = Math.hypot(x - ax - t * dx, y - ay - t * dy);
+              if (d < bd) { bd = d; be = e; bt = t; }
+            }
+          }
+        if (bd <= r) break;
+      }
+      return be >= 0 && bd <= maxR ? { e: be, t: bt, d: bd } : null;
+    }
+    // Dijkstra with a binary heap, reset only what the last run touched
+    const dist = new Float64Array(nV).fill(Infinity);
+    let touched = new Int32Array(4096), nt = 0, hk = new Float64Array(4096), hv = new Int32Array(4096), hn = 0, src = null;
+    function relax(v, d) {
+      if (dist[v] === Infinity) { if (nt === touched.length) { const t = new Int32Array(nt * 2); t.set(touched); touched = t; } touched[nt++] = v; }
+      dist[v] = d;
+      if (hn === hk.length) { const a = new Float64Array(hn * 2), b = new Int32Array(hn * 2); a.set(hk); b.set(hv); hk = a; hv = b; }
+      let i = hn++;
+      while (i > 0) { const p = (i - 1) >> 1; if (hk[p] <= d) break; hk[i] = hk[p]; hv[i] = hv[p]; i = p; }
+      hk[i] = d; hv[i] = v;
+    }
+    function run(x, y, maxD) {
+      for (let i = 0; i < nt; i++) dist[touched[i]] = Infinity;
+      nt = 0; hn = 0;
+      src = snap(x, y, 300);
+      if (!src) return false;
+      const L = el[src.e];
+      relax(eu[src.e], src.d + src.t * L);
+      if (src.d + (1 - src.t) * L < dist[ev[src.e]]) relax(ev[src.e], src.d + (1 - src.t) * L);
+      while (hn) {
+        const k = hk[0], a = hv[0];
+        const lk = hk[--hn], lv = hv[hn]; let i = 0;
+        for (;;) { let c = 2 * i + 1; if (c >= hn) break; if (c + 1 < hn && hk[c + 1] < hk[c]) c++; if (hk[c] >= lk) break; hk[i] = hk[c]; hv[i] = hv[c]; i = c; }
+        hk[i] = lk; hv[i] = lv;
+        if (k > dist[a]) continue;
+        if (k > maxD) break;
+        for (let j = start[a]; j < start[a + 1]; j++) { const nd = k + adjL[j]; if (nd < dist[adjV[j]]) relax(adjV[j], nd); }
+      }
+      return true;
+    }
+    // walking metres from the last run's start to a point snapped onto edge e
+    function distTo(e, t, d) {
+      const L = el[e];
+      let r = Math.min(dist[eu[e]] + t * L, dist[ev[e]] + (1 - t) * L);
+      if (src && e === src.e) r = Math.min(r, src.d + Math.abs(t - src.t) * L);
+      return r + d;
+    }
+    // every edge reached by the last run: cb(ax, ay, bx, by, farEndMetres)
+    function forEachReached(maxD, cb) {
+      for (let i = 0; i < nt; i++) {
+        const a = touched[i], da = dist[a]; if (da > maxD) continue;
+        for (let j = start[a]; j < start[a + 1]; j++) { const b = adjV[j]; if (b < a && dist[b] <= maxD) continue; const db = dist[b]; if (db > maxD) continue; cb(xs[a], ys[a], xs[b], ys[b], Math.max(da, db)); }
+      }
+    }
+    return { nV, nE, snap, run, distTo, forEachReached, get source() { return src; } };
+  }
+
+  function countNear(g, x, y, r) { let n = 0; forNear(g, x, y, r, () => n++); return n; }
+
+  // data: { groups: {id: group}, all: group (every POI, for street life) }
+  function evaluate(data, x, y, detail) {
+    const walk = data.graph && data.graph.run(x, y, MAX_WALK) ? data.graph : null;
+    const cats = {};
+    for (const c of CATS) {
+      if (c.count) {
+        const n = countNear(data.all, x, y, c.count.radius);
+        const s = Math.max(0, Math.min(1, Math.log(Math.max(n, 1) / c.count.lo) / Math.log(c.count.hi / c.count.lo)));
+        cats[c.id] = { score: s, count: n };
+        continue;
+      }
+      const gs = c.groups.map(gs => ({ spec: gs, r: scoreGroup(gs, data.groups[gs.id], x, y, detail, walk) }));
+      let s;
+      if (c.combine === 'or') s = 1 - gs.reduce((p, { spec, r }) => p * (1 - spec.w * r.score), 1);
+      else s = gs.reduce((a, { spec, r }) => a + spec.w * r.score, 0);
+      cats[c.id] = detail ? { score: s, groups: gs.map(({ spec, r }) => ({ id: spec.id, ...r })) } : { score: s };
+    }
+    return cats;
+  }
+
+  function overall(catScores, weights) { // catScores: {id: 0..1}
+    let s = 0, t = 0;
+    for (const c of CATS) { const w = weights[c.id] ?? DEFAULT_WEIGHTS[c.id]; s += w * (catScores[c.id] || 0); t += w; }
+    return t ? 100 * s / t : 0;
+  }
+
+  const api = { LAT0, LON0, M_LAT, M_LON, DETOUR, WALK, MAX_R, PROFILES, CATS, DEFAULT_WEIGHTS, TIERS,
+    MAX_WALK, toXY, toLatLon, minutes, decay, tier, indexGroup, forNear, sampleAreas, prepare, makeGraph, evaluate, overall };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.CityScore = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+(() => {
+'use strict';
+const S = window.CityScore;
+const $ = (s, r = document) => r.querySelector(s);
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return e;
+}
+const fmtMin = m => `${Math.max(1, Math.round(m))} min`;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
+const CAT = Object.fromEntries(S.CATS.map(c => [c.id, c]));
+const WORDS = ["Don't care", 'Minor', 'Nice to have', 'Matters', 'Important', 'Essential'];
+
+// ---------------- data ----------------
+let core, mapData, prepared, gridBytes;
+let addr = null, addrIndex = null, stations = [], quarters = [];
+function decode(a) {
+  const n = a.length / 2, xs = new Float64Array(n), ys = new Float64Array(n);
+  let x = 0, y = 0;
+  for (let i = 0; i < n; i++) { x += a[2 * i]; y += a[2 * i + 1]; xs[i] = x; ys[i] = y; }
+  return { xs, ys };
+}
+function ringPath(p, arr) {
+  let x = 0, y = 0;
+  for (let i = 0; i < arr.length; i += 2) { x += arr[i]; y += arr[i + 1]; if (i === 0) p.moveTo(x, y); else p.lineTo(x, y); }
+}
+function polyPath(p, poly) { for (const r of poly.o) { ringPath(p, r); p.closePath(); } for (const r of poly.i || []) { ringPath(p, r); p.closePath(); } }
+function inRing(x, y, xs, ys) {
+  let c = false;
+  for (let i = 0, j = xs.length - 1; i < xs.length; j = i++)
+    if ((ys[i] > y) !== (ys[j] > y) && x < (xs[j] - xs[i]) * (y - ys[i]) / (ys[j] - ys[i]) + xs[i]) c = !c;
+  return c;
+}
+
+// ---------------- theme ----------------
+let T = null, themeKey = '', LUT = null;
+function hexRGB(hx) { hx = hx.trim().replace('#', ''); return [0, 2, 4].map(i => parseInt(hx.slice(i, i + 2), 16)); }
+function readTheme() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = n => cs.getPropertyValue(n).trim();
+  const key = ['--land', '--heat-0', '--heat-4', '--ink'].map(v).join('|');
+  if (key === themeKey && T) return T;
+  themeKey = key;
+  T = { land: v('--land'), outside: v('--outside'), water: v('--water'), park: v('--park'), road: v('--road'), boundary: v('--boundary'),
+    ink: v('--ink'), ink2: v('--ink-2'), panel: v('--panel'), accent: v('--accent'), onInk: v('--on-ink'), heatAlpha: parseFloat(v('--heat-alpha')) || .75,
+    heat: [0, 1, 2, 3, 4].map(i => hexRGB(v('--heat-' + i))) };
+  LUT = [];
+  for (let i = 0; i < 256; i++) {
+    const t = i / 255 * 4, k = Math.min(3, Math.floor(t)), f = t - k;
+    const a = T.heat[k], b = T.heat[k + 1];
+    LUT.push([0, 1, 2].map(j => Math.round(a[j] + (b[j] - a[j]) * f)));
+  }
+  heatDirty = true;
+  renderLegend(); renderTiers();
+  return T;
+}
+const tierOf = v => S.tier(Math.round(v)); // label matches the number shown
+const heatCSS = v => { const c = LUT[clamp(Math.round(v * 255), 0, 255)]; return `rgb(${c[0]},${c[1]},${c[2]})`; };
+function tierStyle(score) { // pill colours from the ramp
+  const c = LUT[clamp(Math.round(score / 100 * 255), 0, 255)];
+  const lum = (0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]) / 255;
+  return `--tb: rgb(${c[0]},${c[1]},${c[2]}); --tc: ${lum > .55 ? '#1b1e24' : '#ffffff'}`;
+}
+new MutationObserver(() => { readTheme(); requestDraw(); renderAll(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readTheme(); requestDraw(); renderAll(); });
+
+// ---------------- people, places, priorities ----------------
+const shared = { mode: 'loading', db: null, user: null, me: null, canWrite: true, places: [], prefs: {}, profiles: {}, writing: Promise.resolve(), dirtyUntil: 0, note: '' };
+function myWeights() { return shared.prefs[shared.me] || S.DEFAULT_WEIGHTS; }
+function weightsOf(id) { return shared.prefs[id] || S.DEFAULT_WEIGHTS; }
+function people() { // me first, then others who set priorities or saved places
+  const ids = [shared.me];
+  for (const id of Object.keys(shared.prefs)) if (!ids.includes(id)) ids.push(id);
+  for (const p of shared.places) if (p.by && !ids.includes(p.by)) ids.push(p.by);
+  return ids.filter(Boolean).slice(0, 5);
+}
+function personName(id) {
+  if (id === shared.me) return 'You';
+  if (shared.mode === 'local') return (local.others[id] && local.others[id].name) || 'Someone else';
+  const p = shared.profiles[id]; return (p && p.name) || 'Someone else';
+}
+function personColor(id) {
+  if (shared.mode === 'local') { const k = Object.keys(local.others).indexOf(id); return ['#2f7d8c', '#8a5a00', '#6b4fa0', '#3d7a3a'][k % 4] || 'var(--ink-3)'; }
+  const p = shared.profiles[id]; return (p && p.color) || 'var(--ink-3)';
+}
+async function refreshProfiles() {
+  if (!shared.user || shared.mode !== 'shared') return;
+  const ids = people();
+  try { shared.profiles = await shared.user.profiles(ids); } catch {}
+}
+
+// ---------------- evaluation ----------------
+const evalCache = new Map();
+function evaluateAt(x, y) {
+  const k = Math.round(x) + ':' + Math.round(y);
+  if (!evalCache.has(k)) { if (evalCache.size > 200) evalCache.clear(); evalCache.set(k, S.evaluate(prepared, x, y, true)); }
+  return evalCache.get(k);
+}
+const flat = ev => Object.fromEntries(Object.entries(ev).map(([k, v]) => [k, v.score]));
+function districtAt(x, y) {
+  for (const d of core.districtsDecoded) {
+    let inside = d.o.some(r => inRing(x, y, r.xs, r.ys)) && !d.i.some(r => inRing(x, y, r.xs, r.ys));
+    if (inside) return d.name;
+  }
+  return null;
+}
+function quarterAt(x, y) {
+  let best = null, bd = 1100;
+  for (const q of quarters) { const d = Math.hypot(q.x - x, q.y - y) * (q.k === 'suburb' ? 1.3 : 1); if (d < bd) { bd = d; best = q; } }
+  return best && best.n;
+}
+function nearestAddress(x, y) {
+  if (!addrIndex) return null;
+  let best = null, bd = 70;
+  S.forNear(addrIndex, x, y, 70, (i, d) => { if (d < bd) { bd = d; best = i; } });
+  if (best == null) return null;
+  return addrIndex.label(best);
+}
+
+// ---------------- map ----------------
+const cv = $('#map'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1, fitScale = 0.03, drawPending = false, heatCanvas = null, heatDirty = true;
+const view = { cx: 0, cy: 0, s: 0.03 };
+const P = {};
+let focus = null; // category id shown on the map, or null for overall
+let sel = null;   // {x, y, title, sub, example, placeId}
+let reach = null; // street segments reachable from sel: [<=5 min, <=10 min, <=15 min] as Path2D
+let hover = null;
+function requestDraw() { if (!drawPending) { drawPending = true; requestAnimationFrame(draw); } }
+function resize() {
+  const r = cv.parentElement.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (r.width === W && r.height === H && dpr === DPR && cv.width) { if (mapData && !view.init) fit(); requestDraw(); return; }
+  DPR = dpr; W = r.width; H = r.height;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); // this clears the canvas, so redraw right away
+  if (mapData && !view.init) fit();
+  draw();
+}
+new ResizeObserver(resize).observe(cv.parentElement);
+function fit() {
+  const b = mapData.bbox; fitScale = Math.min(W / (b[2] - b[0]), H / (b[3] - b[1])) * 0.94;
+  view.s = fitScale; view.cx = (b[0] + b[2]) / 2; view.cy = (b[1] + b[3]) / 2; view.init = true; requestDraw();
+}
+const toScreen = (x, y) => [W / 2 + (x - view.cx) * view.s, H / 2 - (y - view.cy) * view.s];
+const toWorld = (sx, sy) => [view.cx + (sx - W / 2) / view.s, view.cy - (sy - H / 2) / view.s];
+function worldT() { const s = view.s * DPR; ctx.setTransform(s, 0, 0, -s, (W / 2 - view.cx * view.s) * DPR, (H / 2 + view.cy * view.s) * DPR); }
+function zoomAt(sx, sy, f) {
+  const [wx, wy] = toWorld(sx, sy);
+  view.s = clamp(view.s * f, fitScale * 0.7, 2.2);
+  view.cx = wx - (sx - W / 2) / view.s; view.cy = wy + (sy - H / 2) / view.s; requestDraw();
+}
+function flyTo(x, y, s) { view.cx = x; view.cy = y; if (s) view.s = Math.max(view.s, s); requestDraw(); }
+
+function buildPaths() {
+  P.city = new Path2D(); polyPath(P.city, mapData.city);
+  P.water = new Path2D(); for (const w of mapData.water) polyPath(P.water, w);
+  P.river = new Path2D(); P.canal = new Path2D();
+  for (const r of mapData.rivers) ringPath(r.w ? P.river : P.canal, r.p);
+  P.parks = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+  for (const p of mapData.parks) polyPath(P.parks[p.t] || P.parks[0], p);
+  P.roads = {};
+  for (const [cls, arr] of Object.entries(mapData.roads)) { const p = new Path2D(); for (const l of arr) ringPath(p, l); P.roads[cls] = p; }
+  P.districts = new Path2D(); for (const d of core.districts) polyPath(P.districts, d);
+  P.net = mapData.net.map(n => { const p = new Path2D(); ringPath(p, n.p); return { line: core.lines[n.li], p }; });
+  let b = [1e9, 1e9, -1e9, -1e9];
+  for (const r of mapData.city.o) { const d = decode(r); for (let i = 0; i < d.xs.length; i++) { b[0] = Math.min(b[0], d.xs[i]); b[1] = Math.min(b[1], d.ys[i]); b[2] = Math.max(b[2], d.xs[i]); b[3] = Math.max(b[3], d.ys[i]); } }
+  mapData.bbox = b;
+}
+function buildHeat() {
+  const g = core.grid, nc = g.cats.length, n = g.cols * g.rows;
+  if (!heatCanvas) { heatCanvas = document.createElement('canvas'); heatCanvas.width = g.cols; heatCanvas.height = g.rows; }
+  const hc = heatCanvas.getContext('2d'), img = hc.createImageData(g.cols, g.rows), d = img.data;
+  const fi = focus ? g.cats.indexOf(focus) : -1;
+  const w = g.cats.map(id => myWeights()[id] ?? S.DEFAULT_WEIGHTS[id]);
+  const wt = w.reduce((a, b) => a + b, 0) || 1;
+  for (let i = 0; i < n; i++) {
+    const o = i * nc;
+    if (gridBytes[o] === 255) { d[i * 4 + 3] = 0; continue; }
+    let v;
+    if (fi >= 0) v = gridBytes[o + fi] / 250;
+    else { let s = 0; for (let k = 0; k < nc; k++) s += w[k] * gridBytes[o + k]; v = s / wt / 250; }
+    const c = LUT[clamp(Math.round(v * 255), 0, 255)];
+    d[i * 4] = c[0]; d[i * 4 + 1] = c[1]; d[i * 4 + 2] = c[2]; d[i * 4 + 3] = 255;
+  }
+  hc.putImageData(img, 0, 0); heatDirty = false;
+}
+function gridValueAt(x, y) {
+  const g = core.grid, c = Math.floor((x - g.x0) / g.cell), r = Math.floor((y - g.y0) / g.cell);
+  if (c < 0 || r < 0 || c >= g.cols || r >= g.rows) return null;
+  const o = (r * g.cols + c) * g.cats.length;
+  if (gridBytes[o] === 255) return null;
+  if (focus) return gridBytes[o + g.cats.indexOf(focus)] / 2.5;
+  const w = myWeights(); let s = 0, t = 0;
+  g.cats.forEach((id, k) => { const wk = w[id] ?? S.DEFAULT_WEIGHTS[id]; s += wk * gridBytes[o + k]; t += wk; });
+  return t ? s / t / 2.5 : 0;
+}
+
+function draw() {
+  drawPending = false;
+  if (!mapData) return;
+  readTheme();
+  if (heatDirty) buildHeat();
+  const px = 1 / view.s; // one screen pixel in metres
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = T.outside; ctx.fillRect(0, 0, W, H);
+  worldT();
+  ctx.fillStyle = T.land; ctx.fill(P.city, 'evenodd');
+  const g = core.grid;
+  ctx.save(); ctx.globalAlpha = T.heatAlpha; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(heatCanvas, g.x0, g.y0, g.cols * g.cell, g.rows * g.cell); ctx.restore();
+  ctx.save(); ctx.globalAlpha = .55; ctx.fillStyle = T.park; for (const p of P.parks) ctx.fill(p, 'evenodd'); ctx.restore();
+  ctx.fillStyle = T.water; ctx.fill(P.water, 'evenodd');
+  ctx.strokeStyle = T.water; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(2 * px, 22); ctx.stroke(P.river);
+  ctx.lineWidth = Math.max(1 * px, 6); ctx.stroke(P.canal);
+  // roads
+  const z = clamp(view.s / 0.08, 0.55, 2.4);
+  const roadW = { motorway: 2.6, trunk: 2.4, primary: 2, secondary: 1.4, tertiary: 0.9 };
+  ctx.strokeStyle = T.road;
+  ctx.save(); ctx.globalAlpha = .9;
+  for (const cls of ['tertiary', 'secondary', 'primary', 'trunk', 'motorway']) {
+    if (cls === 'tertiary' && view.s < 0.07) continue;
+    if (cls === 'secondary' && view.s < 0.035) continue;
+    ctx.lineWidth = roadW[cls] * z * px; ctx.stroke(P.roads[cls]);
+  }
+  ctx.restore();
+  // district + city boundary
+  ctx.save(); ctx.strokeStyle = T.boundary; ctx.globalAlpha = .45; ctx.lineWidth = 1 * px; ctx.setLineDash([4 * px, 3 * px]); ctx.stroke(P.districts); ctx.restore();
+  ctx.save(); ctx.strokeStyle = T.boundary; ctx.globalAlpha = .9; ctx.lineWidth = 1.4 * px; ctx.stroke(P.city); ctx.restore();
+  // transit network
+  const tf = focus === 'transit';
+  for (const n of P.net) {
+    if (n.line.mode === 'tram' && !tf && view.s < 0.12) continue;
+    ctx.strokeStyle = n.line.color; ctx.globalAlpha = tf ? .95 : .55;
+    ctx.lineWidth = (n.line.mode === 'tram' ? 1.2 : tf ? 3 : 2) * px; ctx.stroke(n.p);
+  }
+  ctx.globalAlpha = 1;
+  // focused category points
+  if (focus && focus !== 'buzz' && prepared) {
+    const [x0, y1] = toWorld(0, 0), [x1, y0] = toWorld(W, H);
+    const r = clamp(view.s * 18, 1.6, 3.4) * px;
+    ctx.fillStyle = T.ink; ctx.strokeStyle = T.panel; ctx.lineWidth = 1 * px;
+    for (const gs of CAT[focus].groups) {
+      if (gs.id === 'park') continue;
+      const gd = prepared.groups[gs.id]; if (!gd) continue;
+      if (gs.lines && gs.id === 'bus' && view.s < 0.1) continue;
+      ctx.beginPath();
+      for (let i = 0; i < gd.xs.length; i++) {
+        const x = gd.xs[i], y = gd.ys[i];
+        if (x < x0 || x > x1 || y < y0 || y > y1) continue;
+        ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, Math.PI * 2);
+      }
+      ctx.fill(); if (view.s > 0.15) ctx.stroke();
+    }
+  }
+  if (reach) {
+    ctx.save(); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = T.ink; ctx.globalAlpha = .38; ctx.lineWidth = 1.6 * px; ctx.stroke(reach[2]);
+    ctx.globalAlpha = .75; ctx.lineWidth = 2.1 * px; ctx.stroke(reach[1]);
+    ctx.strokeStyle = T.accent; ctx.globalAlpha = 1; ctx.lineWidth = 2.6 * px; ctx.stroke(reach[0]);
+    ctx.restore();
+  }
+  // ---- screen space ----
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawLabels();
+  // selection: walking rings
+  if (sel) {
+    const [sx, sy] = toScreen(sel.x, sel.y);
+    ctx.save();
+    ctx.strokeStyle = T.ink; ctx.fillStyle = T.ink; ctx.lineWidth = 1.3; ctx.setLineDash([5, 4]);
+    ctx.font = '600 11px "Barlow Condensed", "Arial Narrow", sans-serif'; ctx.textAlign = 'center';
+    for (const m of reach ? [] : [5, 10, 15]) {
+      const r = m * S.WALK / S.DETOUR * view.s;
+      if (r < 14) continue;
+      ctx.globalAlpha = .75; ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1; if (r > 40) haloText(`${m} MIN`, sx, sy - r - 4);
+    }
+    ctx.restore();
+    ctx.save(); ctx.fillStyle = T.accent; ctx.strokeStyle = T.panel; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(sx, sy, 7, 0, Math.PI * 2); ctx.stroke(); ctx.fill(); ctx.restore();
+  }
+  // saved places
+  shared.places.forEach((p, i) => {
+    const [sx, sy] = toScreen(p.x, p.y);
+    if (sx < -20 || sy < -20 || sx > W + 20 || sy > H + 20) return;
+    const active = sel && sel.placeId === p.id;
+    ctx.save();
+    ctx.fillStyle = T.ink; ctx.strokeStyle = active ? T.accent : T.panel; ctx.lineWidth = active ? 3 : 2;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.arc(sx, sy - 18, 11, Math.PI * 0.75, Math.PI * 0.25); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = T.onInk; ctx.font = '700 14px "Barlow Condensed", "Arial Narrow", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(letter(i), sx, sy - 18.5);
+    ctx.restore();
+  });
+}
+function haloText(t, x, y) {
+  ctx.save(); ctx.lineWidth = 3.2; ctx.strokeStyle = T.land; ctx.lineJoin = 'round'; ctx.globalAlpha = .9; ctx.strokeText(t, x, y); ctx.restore(); ctx.fillText(t, x, y);
+}
+function drawLabels() {
+  ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = T.ink2;
+  const placed = [];
+  const fits = (x, y, w) => { if (x < 0 || y < 0 || x > W || y > H) return false; if (placed.some(p => Math.abs(p[0] - x) < (p[2] + w) / 2 + 6 && Math.abs(p[1] - y) < 16)) return false; placed.push([x, y, w]); return true; };
+  if (view.s < 0.11) {
+    ctx.font = '600 12px "Barlow Condensed", "Arial Narrow", sans-serif';
+    for (const d of core.districtsDecoded) {
+      const [x, y] = toScreen(d.lx, d.ly); const t = d.short.toUpperCase();
+      const w = ctx.measureText(t).width; if (fits(x, y, w)) haloText(t, x, y);
+    }
+  } else {
+    ctx.font = '600 12.5px "Barlow Condensed", "Arial Narrow", sans-serif';
+    for (const q of quarters) {
+      if (q.k === 'neighbourhood' && view.s < 0.2) continue;
+      const [x, y] = toScreen(q.x, q.y); const t = q.n.toUpperCase();
+      const w = ctx.measureText(t).width; if (fits(x, y, w)) haloText(t, x, y);
+    }
+  }
+  if (view.s > 0.16) {
+    ctx.font = '500 12px "Barlow", Arial, sans-serif'; ctx.fillStyle = T.ink;
+    for (const st of stations) {
+      if (st.mode !== 'rail' && view.s < 0.35) continue;
+      const [x, y] = toScreen(st.x, st.y);
+      if (x < -50 || x > W + 50 || y < -20 || y > H + 20) continue;
+      ctx.save(); ctx.fillStyle = T.panel; ctx.strokeStyle = T.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, y, st.mode === 'rail' ? 4 : 3, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.restore();
+      const w = ctx.measureText(st.name).width;
+      if (fits(x, y - 12, w)) haloText(st.name, x, y - 12);
+    }
+  }
+  ctx.restore();
+}
+
+// pointer interaction
+const ptrs = new Map(); let drag = null, pinch = null;
+cv.addEventListener('pointerdown', e => {
+  cv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, { x: e.offsetX, y: e.offsetY });
+  if (ptrs.size === 1) drag = { x: e.offsetX, y: e.offsetY, cx: view.cx, cy: view.cy, moved: 0 };
+  else if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: view.s }; drag = null;
+  }
+});
+cv.addEventListener('pointermove', e => {
+  if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, { x: e.offsetX, y: e.offsetY });
+  if (pinch && ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    const f = Math.hypot(a.x - b.x, a.y - b.y) / pinch.d;
+    zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, (pinch.s * f) / view.s); return;
+  }
+  if (drag) {
+    const dx = e.offsetX - drag.x, dy = e.offsetY - drag.y;
+    drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
+    if (drag.moved > 4) { cv.classList.add('dragging'); view.cx = drag.cx - dx / view.s; view.cy = drag.cy + dy / view.s; requestDraw(); }
+    $('#tip').hidden = true; return;
+  }
+  if (e.pointerType === 'mouse' && core) showTip(e.offsetX, e.offsetY);
+});
+function endPtr(e) {
+  ptrs.delete(e.pointerId);
+  if (ptrs.size < 2) pinch = null;
+  if (drag && e.type === 'pointerup' && drag.moved <= 4 && prepared) {
+    const hit = pinHit(e.offsetX, e.offsetY);
+    if (hit) selectPlace(hit); else { const [x, y] = toWorld(e.offsetX, e.offsetY); selectPoint(x, y); }
+  }
+  if (ptrs.size === 0) { drag = null; cv.classList.remove('dragging'); }
+}
+cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
+cv.addEventListener('pointerleave', () => { $('#tip').hidden = true; });
+cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.offsetX, e.offsetY, Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0018))); $('#tip').hidden = true; }, { passive: false });
+$('#zin').onclick = () => zoomAt(W / 2, H / 2, 1.6);
+$('#zout').onclick = () => zoomAt(W / 2, H / 2, 1 / 1.6);
+$('#zfit').onclick = () => fit();
+function pinHit(sx, sy) {
+  for (let i = shared.places.length - 1; i >= 0; i--) {
+    const p = shared.places[i]; const [x, y] = toScreen(p.x, p.y);
+    if (Math.hypot(sx - x, sy - 18 - y) < 13) return p;
+  }
+  return null;
+}
+function showTip(sx, sy) {
+  const [x, y] = toWorld(sx, sy); const v = gridValueAt(x, y); const tip = $('#tip');
+  if (v == null) { tip.hidden = true; return; }
+  const label = focus ? CAT[focus].label : tierOf(v);
+  tip.textContent = `${Math.round(v)} · ${label}`;
+  tip.style.left = sx + 'px'; tip.style.top = sy + 'px'; tip.hidden = false;
+}
+
+// ---------------- layer select + legend ----------------
+function renderLayerSelect() {
+  const s = $('#layer'); s.replaceChildren(h('option', { value: '' }, 'Overall city score (your priorities)'), ...S.CATS.map(c => h('option', { value: c.id }, c.label)));
+  s.value = focus || '';
+  s.onchange = () => setFocus(s.value || null);
+}
+function setFocus(id) {
+  focus = id; heatDirty = true; $('#layer').value = id || ''; renderLegend(); requestDraw(); renderSpot();
+}
+function renderLegend() {
+  const L = $('#legend'); if (!LUT) return;
+  const stops = [0, .25, .5, .75, 1].map(v => `${heatCSS(v)} ${v * 100}%`).join(',');
+  L.replaceChildren(
+    h('div', { class: 'eyebrow', style: 'font-size:11px' }, focus ? CAT[focus].label + ' score' : 'Overall city score'),
+    h('div', { class: 'ramp', style: `background: linear-gradient(90deg, ${stops})` }),
+    h('div', { class: 'ticks' }, h('span', {}, focus ? '0 · nothing near' : '0 · suburban'), h('span', {}, '50'), h('span', {}, focus ? '100 · on your doorstep' : '100 · city core')),
+    reach ? h('div', { class: 'reachkey' }, 'On foot from the spot:', h('i', { style: 'background:var(--accent)' }), '5', h('i', { style: 'opacity:.75' }), '10', h('i', { style: 'opacity:.38' }), '15 min') : null);
+}
+function buildReach() {
+  reach = null;
+  const G = prepared && prepared.graph;
+  if (G && sel && G.run(sel.x, sel.y, 1200)) {
+    reach = [new Path2D(), new Path2D(), new Path2D()];
+    G.forEachReached(1200, (ax, ay, bx, by, d) => { const p = reach[d <= 400 ? 0 : d <= 800 ? 1 : 2]; p.moveTo(ax, ay); p.lineTo(bx, by); });
+  }
+  renderLegend();
+}
+function renderTiers() {
+  const el = $('#tiers'); if (!el || !LUT) return;
+  const tiers = S.TIERS.map((t, i) => [t[0], i ? S.TIERS[i - 1][0] - 1 : 100, t[1]]);
+  el.replaceChildren(...tiers.map(([lo, hi, name]) => h('div', {}, h('span', { class: 'sw', style: `background:${heatCSS((lo + hi) / 200)}` }), h('b', { class: 'num' }, `${lo}–${hi}`), name)));
+  el.append(h('p', { class: 'muted', style: 'margin-top:10px; max-width:60ch' }, 'Hover the map to read the score of any block. Click anywhere to see what\'s within walking distance. Pick a category in the panel to colour the map by just that category.'));
+}
+
+// ---------------- spot panel ----------------
+function selectPoint(x, y, opts = {}) {
+  const near = opts.title ? null : nearestAddress(x, y);
+  const district = districtAt(x, y), quarter = quarterAt(x, y);
+  const place = shared.places.find(p => Math.hypot(p.x - x, p.y - y) < 12);
+  sel = { x, y, title: opts.title || (near ? near : quarter ? `Spot in ${quarter}` : 'Selected spot'),
+    sub: [quarter, district].filter((v, i, a) => v && a.indexOf(v) === i).join(' · ') || 'Outside the city boundary',
+    example: !!opts.example, placeId: opts.placeId || (place && place.id) || null, near: near || '' };
+  saving = false; buildReach(); renderSpot(); requestDraw();
+}
+function selectPlace(p) {
+  selectPoint(p.x, p.y, { title: p.name, placeId: p.id });
+  flyTo(p.x, p.y, 0.18);
+  if (matchMedia('(max-width: 980px)').matches) $('.mapwrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+let saving = false;
+function letter(i) { return i < 26 ? String.fromCharCode(65 + i) : String(i + 1); }
+
+function detailFor(cat, ev) {
+  const r = ev[cat.id];
+  const grp = id => r.groups && r.groups.find(g => g.id === id);
+  const near = (id, n) => {
+    const g = grp(id), gd = core.groups[id]; if (!g || !g.items) return [];
+    return g.items.slice().sort((a, b) => a.d - b.d).slice(0, n).map(it => ({ name: gd.n[it.i] || gd.types[gd.t[it.i]], min: it.min, type: gd.types[gd.t[it.i]] }));
+  };
+  const fmt = l => l.map(o => `${o.name} ${fmtMin(o.min)}`).join(' · ');
+  const cnt = id => (grp(id) && grp(id).within10) || 0;
+  switch (cat.id) {
+    case 'transit': {
+      const frag = [];
+      for (const mode of ['rail', 'tram', 'bus']) {
+        const g = grp(mode); if (!g || !g.items) continue;
+        const its = g.items.filter(it => it.min <= (mode === 'rail' ? 20 : 12)).sort((a, b) => a.d - b.d);
+        if (!its.length) continue;
+        const byStop = new Map();
+        for (const it of its) {
+          const name = core.groups[mode].n[it.i] || 'Stop';
+          if (!byStop.has(name)) byStop.set(name, { min: it.min, lines: [] });
+          byStop.get(name).lines.push(core.lines[it.k]);
+        }
+        const rows = [...byStop].slice(0, mode === 'rail' ? 3 : 2);
+        for (const [name, s] of rows) {
+          frag.push(h('span', { class: 'stoprow' },
+            ...s.lines.slice(0, 6).map(l => h('span', { class: 'line ' + l.mode, style: `--lc:${l.color}` }, l.mode === 'bus' && !/^X/.test(l.ref) ? l.ref : l.ref)),
+            ` ${name} · ${fmtMin(s.min)}`));
+        }
+      }
+      return frag.length ? frag : ['No U-Bahn, S-Bahn, tram or bus within a short walk'];
+    }
+    case 'groceries': {
+      const s = near('supermarket', 2); const f = cnt('foodshop');
+      return [s.length ? fmt(s) : 'No supermarket within 20 min', f ? ` · ${f} more food shops within 10 min` : ''];
+    }
+    case 'bakery': { const s = near('bakery', 2); return [s.length ? fmt(s) : 'No bakery within 20 min']; }
+    case 'cafes': case 'food': case 'nightlife': case 'sport': {
+      const id = cat.groups[0].id; const s = near(id, 1); const c = cnt(id);
+      if (!s.length) return [`Nothing within ${cat.groups[0].profile === 'leisure' ? 25 : 20} min`];
+      return [`${c > 1 ? c + ' within 10 min · ' : ''}nearest ${fmt(s)}`];
+    }
+    case 'health': {
+      const p = near('pharmacy', 1), c = cnt('doctor');
+      return [p.length ? fmt(p) : 'No pharmacy nearby', ` · ${c} practice${c === 1 ? '' : 's'} within 10 min`];
+    }
+    case 'errands': {
+      const out = [];
+      const d = near('drugstore', 1); if (d.length) out.push(fmt(d));
+      const p = near('post', 1); if (p.length) out.push(`Post ${fmtMin(p[0].min)}`);
+      const c = near('cash', 1); if (c.length) out.push(`${c[0].type} ${fmtMin(c[0].min)}`);
+      return [out.join(' · ') || 'Little nearby'];
+    }
+    case 'green': {
+      const g = grp('park'); if (!g || !g.items || !g.items.length) return ['No park within 25 min'];
+      const seen = new Set(); const out = [];
+      for (const it of g.items.slice().sort((a, b) => a.d - b.d)) {
+        const a = core.areas.list[it.k];
+        const nm = a.n || (a.m > .8 ? 'Large park' : a.m < .5 ? 'Small ' + core.areas.types[a.t].toLowerCase() : core.areas.types[a.t]);
+        if (seen.has(nm)) continue; seen.add(nm); out.push(`${nm} ${fmtMin(it.min)}`);
+        if (out.length === 2) break;
+      }
+      return [out.join(' · ')];
+    }
+    case 'culture': {
+      const s = near('culture', 2); if (!s.length) return ['Nothing within 25 min'];
+      return [s.map(o => `${o.type}: ${o.name === o.type ? '' : o.name + ' '}${fmtMin(o.min)}`).join(' · ')];
+    }
+    case 'shops': { const c = cnt('shop'); return [`${c} shop${c === 1 ? '' : 's'} within 10 min`]; }
+    case 'buzz': return [`${r.count} shops, cafés, bars and services within 500 m`];
+  }
+  return [];
+}
+
+function renderSpot() {
+  const el = $('#spot');
+  if (!prepared) { el.replaceChildren(h('div', { class: 'loadingpanel' }, core ? 'Working out walking routes…' : 'Loading Munich…')); return; }
+  if (!sel) return;
+  const ev = evaluateAt(sel.x, sel.y), fl = flat(ev);
+  const mine = S.overall(fl, myWeights());
+  const others = people().filter(id => id !== shared.me);
+  const place = sel.placeId && shared.places.find(p => p.id === sel.placeId);
+  const idx = place ? shared.places.indexOf(place) : -1;
+
+  const head = h('div', { class: 'spot-head' },
+    h('div', {},
+      sel.example ? h('div', { class: 'eyebrow', style: 'margin-bottom:4px' }, 'Example · click the map or search to check your own') :
+        place ? h('div', { class: 'eyebrow', style: 'margin-bottom:4px' }, `Saved as ${letter(idx)}`) : null,
+      h('div', { class: 'spot-title', text: sel.title }),
+      h('div', { class: 'spot-sub', text: sel.sub })),
+    h('div', { class: 'scorebox' },
+      h('div', { class: 'bignum', text: String(Math.round(mine)) }),
+      h('div', {},
+        h('span', { class: 'tier', style: tierStyle(mine), text: tierOf(mine) }),
+        h('div', { class: 'who' },
+          others.length ? h('span', {}, 'You ', h('b', {}, Math.round(mine))) : h('span', {}, 'Overall, with your priorities'),
+          ...others.map(id => h('span', {}, h('i', { class: 'dot', style: `--c:${personColor(id)}` }), `${personName(id)} `, h('b', {}, Math.round(S.overall(fl, weightsOf(id))))))))),
+    saveBlock(place));
+
+  const list = h('ul', { class: 'cats' });
+  for (const c of S.CATS) {
+    const v = Math.round(fl[c.id] * 100);
+    list.append(h('li', {}, h('button', { class: 'cat', 'aria-pressed': String(focus === c.id), title: c.hint,
+      onclick: () => setFocus(focus === c.id ? null : c.id) },
+      h('span', { class: 'cname', text: c.label }),
+      h('span', { class: 'bar' }, h('i', { style: `width:${v}%; --fill:${heatCSS(fl[c.id] * .85 + .15)}` })),
+      h('span', { class: 'cval', text: String(v) }),
+      h('span', { class: 'cdetail' }, ...detailFor(c, ev)))));
+  }
+  el.replaceChildren(head, list);
+}
+
+function saveBlock(place) {
+  if (place) {
+    return h('div', { class: 'actions' },
+      h('button', { class: 'btn ghost small', onclick: () => $('#shortlist').scrollIntoView({ behavior: 'smooth' }) }, 'See it in the shortlist'));
+  }
+  if (!shared.canWrite) return h('p', { class: 'muted', style: 'font-size:13px' }, 'You can view this shortlist, but only people with Contributor access can add flats.');
+  if (!saving) return h('div', { class: 'actions' }, h('button', { class: 'btn', onclick: () => { saving = true; renderSpot(); setTimeout(() => $('#f-name') && $('#f-name').focus(), 0); } }, 'Save to shortlist'));
+  const form = h('form', { class: 'saveform', onsubmit: async e => {
+    e.preventDefault();
+    const num = id => { const v = parseFloat(($(id).value || '').replace(',', '.')); return isFinite(v) && v > 0 ? v : null; };
+    const link = $('#f-link').value.trim();
+    const doc = { name: $('#f-name').value.trim().slice(0, 80) || sel.title, addr: sel.near || sel.title, x: Math.round(sel.x), y: Math.round(sel.y),
+      rent: num('#f-rent'), size: num('#f-size'), link: /^https?:\/\//i.test(link) ? link.slice(0, 400) : '', note: $('#f-note').value.trim().slice(0, 280),
+      by: shared.me || null, at: Date.now() };
+    $('#f-save').disabled = true;
+    const id = await addPlace(doc);
+    if (id) { saving = false; sel.placeId = id; sel.title = doc.name; toast(`Saved to the shortlist as ${letter(shared.places.findIndex(p => p.id === id))}`); }
+    else $('#f-save').disabled = false;
+    renderSpot();
+  } },
+    h('label', { class: 'full' }, 'Name', h('input', { id: 'f-name', value: sel.example ? '' : sel.title, placeholder: 'e.g. 3-room flat, Türkenstraße', maxlength: '80', required: true })),
+    h('label', {}, 'Warm rent (€)', h('input', { id: 'f-rent', inputmode: 'decimal', placeholder: '1850' })),
+    h('label', {}, 'Size (m²)', h('input', { id: 'f-size', inputmode: 'decimal', placeholder: '72' })),
+    h('label', { class: 'full' }, 'Listing link', h('input', { id: 'f-link', type: 'url', placeholder: 'https://…' })),
+    h('label', { class: 'full' }, 'Note', h('input', { id: 'f-note', maxlength: '280', placeholder: 'Viewing on Thursday, 3rd floor, no lift' })),
+    h('div', { class: 'actions full' }, h('button', { class: 'btn', id: 'f-save', type: 'submit' }, 'Save'), h('button', { class: 'btn ghost', type: 'button', onclick: () => { saving = false; renderSpot(); } }, 'Cancel')));
+  return form;
+}
+
+// ---------------- shortlist ----------------
+const confirming = new Set();
+function renderShortlist() {
+  const wrap = $('#cmp'), verdict = $('#verdict');
+  if (!prepared) return;
+  renderStatus();
+  const places = shared.places;
+  if (!places.length) {
+    verdict.replaceChildren();
+    wrap.replaceChildren(h('div', { class: 'cmp-wrap' }, h('div', { class: 'empty' },
+      h('strong', {}, shared.mode === 'loading' ? 'Loading the shortlist…' : 'No flats saved yet'),
+      h('p', { class: 'muted' }, 'Search an address or click the map, then press "Save to shortlist". Saved flats show up here for both of you, with every category side by side.'))));
+    return;
+  }
+  const ppl = people();
+  const evs = places.map(p => flat(evaluateAt(p.x, p.y)));
+  const totals = ppl.map(id => evs.map(f => S.overall(f, weightsOf(id))));
+
+  // verdict
+  const v = [];
+  if (places.length >= 2) {
+    ppl.forEach((id, k) => {
+      const order = totals[k].map((s, i) => [s, i]).sort((a, b) => b[0] - a[0]);
+      const [a, b] = order;
+      v.push(h('p', {}, h('i', { class: 'dot', style: `--c:${id === shared.me ? 'var(--accent)' : personColor(id)}` }),
+        `${id === shared.me ? 'With your priorities' : `With ${personName(id)}'s priorities`}, `,
+        h('b', {}, `${letter(a[1])} · ${places[a[1]].name}`), ` comes out on top (${Math.round(a[0])} vs ${Math.round(b[0])} for ${letter(b[1])}).`));
+    });
+    const leads = new Map();
+    let gap = null;
+    for (const c of S.CATS) {
+      const vals = evs.map(f => f[c.id]); const max = Math.max(...vals), min = Math.min(...vals);
+      if (max - min < 0.08) continue;
+      const i = vals.indexOf(max);
+      if (!leads.has(i)) leads.set(i, []); leads.get(i).push(c.label.toLowerCase());
+      if (!gap || max - min > gap.d) gap = { d: max - min, c, hi: i, lo: vals.indexOf(min) };
+    }
+    const parts = [...leads].sort((a, b) => a[0] - b[0]).map(([i, cats]) => `${letter(i)} leads on ${cats.join(', ')}`);
+    if (parts.length) v.push(h('p', {}, parts.join('. ') + '.'));
+    if (gap) v.push(h('p', { class: 'muted' }, `Biggest difference: ${gap.c.label.toLowerCase()} (${letter(gap.hi)} ${Math.round(evs[gap.hi][gap.c.id] * 100)} vs ${letter(gap.lo)} ${Math.round(evs[gap.lo][gap.c.id] * 100)}).`));
+  }
+  verdict.replaceChildren(...(v.length ? [h('div', { class: 'verdict' }, ...v)] : []));
+
+  const lead = vals => { const m = Math.max(...vals); return vals.map(x => places.length > 1 && x === m && vals.filter(y => y === m).length < vals.length); };
+  const head = h('tr', {}, h('th', {}, ''), ...places.map((p, i) => {
+    const meta = [];
+    if (p.addr && p.addr !== p.name) meta.push(h('span', {}, p.addr));
+    const d = districtAt(p.x, p.y); if (d) meta.push(h('span', {}, d));
+    if (p.by && people().length > 1) meta.push(h('span', {}, `Added by ${p.by === shared.me ? 'you' : personName(p.by)}`));
+    if (p.link) { let host = ''; try { host = new URL(p.link).hostname.replace(/^www\./, ''); } catch {} meta.push(h('a', { href: p.link, target: '_blank', rel: 'noopener noreferrer' }, `Listing on ${host || 'web'} ↗`)); }
+    if (p.note) meta.push(h('span', { style: 'font-style:italic' }, p.note));
+    const rm = confirming.has(p.id)
+      ? h('div', { class: 'confirm' }, h('button', { class: 'btn small', onclick: () => removePlace(p.id) }, 'Remove'), h('button', { class: 'btn ghost small', onclick: () => { confirming.delete(p.id); renderShortlist(); } }, 'Keep'))
+      : null;
+    return h('th', {},
+      h('div', { class: 'ph' }, h('span', { class: 'pin' }, letter(i)), h('button', { class: 'name', onclick: () => selectPlace(p), title: 'Show on map' }, p.name),
+        shared.canWrite ? h('button', { class: 'rm', 'aria-label': `Remove ${p.name}`, title: 'Remove', onclick: () => { confirming.add(p.id); renderShortlist(); } }, '×') : null),
+      h('div', { class: 'meta' }, ...meta), rm);
+  }));
+  const rows = [];
+  ppl.forEach((id, k) => {
+    const L = lead(totals[k]);
+    rows.push(h('tr', { class: 'total' }, h('th', {}, h('i', { class: 'dot', style: `--c:${id === shared.me ? 'var(--accent)' : personColor(id)}` }), id === shared.me ? (ppl.length > 1 ? 'Overall for you' : 'Overall') : `Overall for ${personName(id)}`),
+      ...totals[k].map((s, i) => h('td', { class: L[i] ? 'lead' : '' }, h('span', { class: 'big' }, Math.round(s)), h('span', { class: 'tier', style: tierStyle(s) }, tierOf(s))))));
+  });
+  if (places.some(p => p.rent || p.size)) {
+    const ppm = places.map(p => p.rent && p.size ? p.rent / p.size : null);
+    const valid = ppm.filter(x => x != null); const best = valid.length > 1 ? Math.min(...valid) : null;
+    rows.push(h('tr', {}, h('th', {}, 'Rent'), ...places.map((p, i) => h('td', { class: best != null && ppm[i] === best ? 'lead' : '' },
+      p.rent ? `${Math.round(p.rent).toLocaleString('de-DE')} €` : '–', p.size ? ` · ${p.size} m²` : '', ppm[i] ? h('div', { class: 'muted', style: 'font-size:12.5px' }, `${ppm[i].toFixed(1).replace('.', ',')} €/m²`) : ''))));
+  }
+  rows.push(h('tr', { class: 'sep' }, h('th', { class: 'eyebrow' }, 'Categories'), ...places.map(() => h('td', {}))));
+  for (const c of S.CATS) {
+    const vals = evs.map(f => f[c.id]); const L = lead(vals.map(x => Math.round(x * 100)));
+    rows.push(h('tr', {}, h('th', { title: c.hint }, c.label), ...vals.map((x, i) => h('td', { class: L[i] ? 'lead' : '' },
+      h('div', { class: 'cell' }, h('span', { class: 'bar' }, h('i', { style: `width:${Math.round(x * 100)}%; --fill:${heatCSS(x * .85 + .15)}` })), h('b', {}, Math.round(x * 100)))))));
+  }
+  wrap.replaceChildren(h('div', { class: 'cmp-wrap' }, h('table', { class: 'cmp' }, h('thead', {}, head), h('tbody', {}, ...rows))));
+}
+function renderStatus() {
+  const st = $('#status'); const ppl = people();
+  const kids = [];
+  if (shared.mode === 'shared') {
+    const imgs = ppl.map(id => { const p = shared.profiles[id]; return p && p.avatarUrl ? h('img', { src: p.avatarUrl, alt: personName(id), title: personName(id) }) : null; }).filter(Boolean);
+    if (imgs.length) kids.push(h('span', { class: 'people' }, ...imgs));
+    kids.push(h('span', {}, ppl.length > 1 ? `Shared between ${ppl.map(personName).join(', ').replace(/, ([^,]*)$/, ' and $1')}` : 'Shared with everyone who can open this page'));
+  } else if (shared.mode === 'local' && SELF_HOSTED) {
+    const nameIn = h('input', { id: 'my-name', placeholder: 'Your name', value: local.name, maxlength: '40', 'aria-label': 'Your name, shown to people you share with' });
+    nameIn.addEventListener('change', () => { local.name = nameIn.value.trim().slice(0, 40); store.set('vc.name', local.name); });
+    kids.push(nameIn, h('button', { class: 'btn small', onclick: copyShare }, 'Copy share link'));
+  } else if (shared.mode === 'local') kids.push(h('span', {}, shared.note || 'Saved in this browser only'));
+  else kids.push(h('span', {}, 'Connecting…'));
+  st.replaceChildren(...kids);
+}
+
+// ---------------- priorities ----------------
+function renderPrio() {
+  const el = $('#prio'); const ppl = people(); const others = ppl.filter(id => id !== shared.me);
+  el.style.setProperty('--cols', `minmax(150px, 1.1fr) minmax(200px, 1.5fr)${others.length ? ` repeat(${others.length}, minmax(90px, .7fr))` : ' minmax(0, .6fr)'}`);
+  const mine = myWeights();
+  const rows = [h('div', { class: 'prow headrow' }, h('span', {}, 'Category'), h('span', {}, 'Your priority'), ...others.map(id => h('span', {}, personName(id))))];
+  for (const c of S.CATS) {
+    const v = mine[c.id] ?? S.DEFAULT_WEIGHTS[c.id];
+    const word = h('span', { text: WORDS[v] });
+    const input = h('input', { type: 'range', min: '0', max: '5', step: '1', value: String(v), id: 'w-' + c.id, 'aria-label': `${c.label} priority` });
+    input.addEventListener('input', () => { word.textContent = WORDS[+input.value]; setWeight(c.id, +input.value); });
+    rows.push(h('div', { class: 'prow' },
+      h('div', { class: 'pl' }, c.label, h('small', {}, c.hint)),
+      h('div', { class: 'slider' }, input, word),
+      ...(others.length ? [h('div', { class: 'others' }, ...others.map(id => {
+        const ow = weightsOf(id)[c.id] ?? S.DEFAULT_WEIGHTS[c.id];
+        return h('span', { title: `${personName(id)}: ${WORDS[ow]}` }, matchMedia('(max-width: 560px)').matches ? `${personName(id)} ` : '',
+          h('span', { class: 'pips', style: `--c:${personColor(id)}` }, ...[1, 2, 3, 4, 5].map(k => h('i', { class: k <= ow ? 'on' : '' }))));
+      }))] : [])));
+  }
+  el.replaceChildren(...rows);
+  // disagreement summary
+  const d = $('#disagree');
+  if (!others.length) {
+    d.textContent = shared.mode === 'shared' ? 'Other people\'s priorities appear here once they open this page and move a slider.' : '';
+    return;
+  }
+  const o = others[0], ow = weightsOf(o);
+  const diffs = S.CATS.map(c => [c, (mine[c.id] ?? S.DEFAULT_WEIGHTS[c.id]) - (ow[c.id] ?? S.DEFAULT_WEIGHTS[c.id])]).filter(x => x[1] !== 0).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+  if (!diffs.length) { d.textContent = `You and ${personName(o)} have exactly the same priorities.`; return; }
+  const youMore = diffs.filter(x => x[1] > 0).slice(0, 3).map(x => x[0].label.toLowerCase());
+  const themMore = diffs.filter(x => x[1] < 0).slice(0, 3).map(x => x[0].label.toLowerCase());
+  const parts = [];
+  if (youMore.length) parts.push(`You care more about ${youMore.join(', ')}`);
+  if (themMore.length) parts.push(`${personName(o)} cares more about ${themMore.join(', ')}`);
+  d.textContent = parts.join('. ') + '.';
+}
+let weightT = null;
+function setWeight(id, v) {
+  const w = { ...S.DEFAULT_WEIGHTS, ...myWeights(), [id]: v };
+  shared.prefs = { ...shared.prefs, [shared.me]: w };
+  heatDirty = true; requestDraw(); renderSpot(); renderShortlist(); renderDisagreeOnly();
+  shared.dirtyUntil = Date.now() + 4000;
+  clearTimeout(weightT); weightT = setTimeout(saveWeights, 700);
+}
+function renderDisagreeOnly() { // avoid rebuilding sliders mid-drag
+  const others = people().filter(id => id !== shared.me);
+  if (others.length) { const keep = document.activeElement && document.activeElement.id; renderPrio(); if (keep) { const k = document.getElementById(keep); if (k) k.focus(); } }
+}
+async function saveWeights() {
+  const w = myWeights();
+  if (shared.mode === 'shared') {
+    shared.writing = shared.writing.then(() => shared.db.doc('prefs/' + shared.me).set({ w, at: Date.now() })).catch(e => { if (e && e.code === 'invalid_argument') toast('Your priorities could not be saved for others to see.'); });
+    await shared.writing;
+  } else store.set('vc.weights', w);
+}
+$('#reset').onclick = () => { shared.prefs = { ...shared.prefs, [shared.me]: { ...S.DEFAULT_WEIGHTS } }; heatDirty = true; requestDraw(); renderAll(); saveWeights(); };
+
+// ---------------- storage: shared (db) or local ----------------
+async function addPlace(doc) {
+  if (shared.places.length >= 40) { toast('The shortlist holds 40 flats. Remove one first.'); return null; }
+  if (shared.mode === 'shared') {
+    try { const ref = await shared.db.collection('places').add(doc); upsertLocalPlace({ id: ref.id, ...doc }); return ref.id; }
+    catch (e) {
+      if (e && e.code === 'invalid_argument') { shared.canWrite = false; toast('You can view this shortlist but not add to it.'); }
+      else if (e && e.code === 'quota_exceeded') toast('The shortlist is full. Remove a flat first.');
+      else toast('Saving failed. Check your connection and try again.');
+      return null;
+    }
+  }
+  const id = 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  upsertLocalPlace({ id, ...doc }); store.set('vc.places', shared.places); return id;
+}
+function upsertLocalPlace(p) {
+  if (!shared.places.some(q => q.id === p.id)) shared.places = [...shared.places, p].sort((a, b) => (a.at || 0) - (b.at || 0));
+  requestDraw(); renderShortlist();
+}
+async function removePlace(id) {
+  confirming.delete(id);
+  if (shared.mode === 'shared') {
+    try { await shared.db.doc('places/' + id).delete(); } catch { toast('Removing failed. Try again.'); return; }
+  }
+  shared.places = shared.places.filter(p => p.id !== id);
+  if (shared.mode !== 'shared') { store.set('vc.places', shared.places); local.removed = [...local.removed, id].slice(-500); store.set('vc.removed', local.removed); }
+  if (sel && sel.placeId === id) sel.placeId = null;
+  requestDraw(); renderAll();
+}
+// ---------------- self-hosted: browser storage + share links ----------------
+const SELF_HOSTED = !(window.claude && typeof window.claude.use === 'function');
+const local = { id: null, name: '', others: {}, removed: [] };
+function localMode(note) {
+  shared.mode = 'local'; shared.note = note || '';
+  local.id = store.get('vc.id', null);
+  if (!local.id) { local.id = 'p' + Math.random().toString(36).slice(2, 10); store.set('vc.id', local.id); }
+  local.name = store.get('vc.name', ''); local.others = store.get('vc.others', {}) || {}; local.removed = store.get('vc.removed', []) || [];
+  shared.me = local.id;
+  shared.places = (store.get('vc.places', []) || []).filter(p => !local.removed.includes(p.id));
+  shared.prefs = {};
+  const w = store.get('vc.weights', null); if (w) shared.prefs[local.id] = sanitizeWeights(w);
+  for (const [id, o] of Object.entries(local.others)) if (o && o.w) shared.prefs[id] = sanitizeWeights(o.w);
+  if (SELF_HOSTED) {
+    const n = $('#syncnote'); n.hidden = false;
+    n.replaceChildren(h('p', {}, 'Your shortlist and priorities are saved in this browser. To compare with other people, send them your share link: opening it adds your flats and your priorities to their page. They can send theirs back the same way.'));
+    importFromHash();
+    window.addEventListener('hashchange', importFromHash);
+  }
+  heatDirty = true; requestDraw(); renderAll();
+}
+const b64url = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const fromB64url = t => { const s = atob(t.replace(/-/g, '+').replace(/_/g, '/')); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; };
+const pipeBytes = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+async function shareLink() {
+  const payload = { v: 1, from: { id: local.id, name: local.name }, w: myWeights(), removed: local.removed.slice(-200),
+    places: shared.places.map(p => ({ id: p.id, name: p.name, addr: p.addr, x: p.x, y: p.y, rent: p.rent, size: p.size, link: p.link, note: p.note, by: p.by, at: p.at })) };
+  let bytes = new TextEncoder().encode(JSON.stringify(payload)), tag = 'j';
+  if (typeof CompressionStream === 'function') { try { bytes = await pipeBytes(bytes, new CompressionStream('deflate-raw')); tag = 'z'; } catch {} }
+  return location.origin + location.pathname + '#share=' + tag + b64url(bytes);
+}
+async function copyShare() {
+  if (!local.name) { toast('Add your name first, so others know whose priorities these are.'); const n = $('#my-name'); if (n) n.focus(); return; }
+  const url = await shareLink();
+  try { await navigator.clipboard.writeText(url); toast('Link copied. Send it to the people you want to compare with.'); }
+  catch {
+    const box = h('input', { readonly: true, value: url, 'aria-label': 'Share link' });
+    $('#syncnote').replaceChildren(h('p', {}, 'Copy this link and send it to the people you want to compare with:'), box);
+    box.focus(); box.select();
+  }
+}
+async function importFromHash() {
+  const m = /^#share=([jz])([A-Za-z0-9_-]+)$/.exec(location.hash); if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  let d;
+  try {
+    let bytes = fromB64url(m[2]);
+    if (m[1] === 'z') bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'));
+    d = JSON.parse(new TextDecoder().decode(bytes));
+    if (!d || d.v !== 1 || !Array.isArray(d.places)) throw new Error('format');
+  } catch { toast('That share link is incomplete. Ask for a new one.'); return; }
+  const str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
+  const num = v => typeof v === 'number' && isFinite(v) && v > 0 ? v : null;
+  const fromId = str(d.from && d.from.id, 40), fromName = str(d.from && d.from.name, 40).trim();
+  if (fromId === local.id) { toast('That\'s your own share link. Send it to someone else instead.'); return; }
+  const removed = new Set([...local.removed, ...(Array.isArray(d.removed) ? d.removed.filter(x => typeof x === 'string').slice(-200) : [])]);
+  local.removed = [...removed].slice(-500);
+  let added = 0; const have = new Set(shared.places.map(p => p.id));
+  const places = shared.places.filter(p => !removed.has(p.id));
+  for (const q of d.places.slice(0, 40)) {
+    const id = str(q.id, 40);
+    if (!id || have.has(id) || removed.has(id) || !isFinite(q.x) || !isFinite(q.y) || Math.abs(q.x) > 40000 || Math.abs(q.y) > 40000) continue;
+    const link = str(q.link, 400);
+    places.push({ id, name: str(q.name, 80) || 'Flat', addr: str(q.addr, 120), x: Math.round(q.x), y: Math.round(q.y), rent: num(q.rent), size: num(q.size),
+      link: /^https?:\/\//i.test(link) ? link : '', note: str(q.note, 280), by: str(q.by, 40) || fromId, at: num(q.at) || Date.now() });
+    have.add(id); added++;
+  }
+  shared.places = places.sort((a, b) => (a.at || 0) - (b.at || 0)).slice(0, 40);
+  if (fromId && d.w && typeof d.w === 'object') {
+    local.others = { ...local.others, [fromId]: { name: fromName || 'Someone else', w: sanitizeWeights(d.w) } };
+    shared.prefs = { ...shared.prefs, [fromId]: local.others[fromId].w };
+  }
+  store.set('vc.places', shared.places); store.set('vc.removed', local.removed); store.set('vc.others', local.others);
+  heatDirty = true; requestDraw(); renderAll();
+  toast(`Added ${added} flat${added === 1 ? '' : 's'}${fromName ? ' from ' + fromName : ''} and updated ${fromName ? fromName + '\'s' : 'their'} priorities.`);
+}
+async function initShared() {
+  const C = window.claude;
+  if (!C || typeof C.use !== 'function') return localMode();
+  let db = null, user = null;
+  try { [db, user] = await Promise.all([C.use('db'), C.use('user')]); } catch {}
+  const me = user ? await user.id().catch(() => null) : null;
+  if (!db || !me) return localMode('Saved in this browser only. Sign in to share the shortlist with others.');
+  Object.assign(shared, { mode: 'shared', db, user, me });
+  try { const can = await user.can('data.write'); if (can === false) shared.canWrite = false; } catch {}
+  renderAll();
+  let gotPlaces = false;
+  const timer = setTimeout(() => { if (!gotPlaces) { shared.note = 'The shared shortlist can\'t be reached yet.'; $('#status').textContent = shared.note; } }, 10000);
+  db.collection('places').orderBy('at').onSnapshot(snap => {
+    if (!snap.metadata.fromCache) { gotPlaces = true; clearTimeout(timer); }
+    shared.places = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => isFinite(p.x) && isFinite(p.y)).map(p => ({ ...p, name: String(p.name || 'Flat').slice(0, 80) }));
+    refreshProfiles().then(() => { requestDraw(); renderAll(); });
+  }, err => { clearTimeout(timer); $('#status').textContent = 'The shared shortlist is unavailable right now.'; });
+  db.collection('prefs').onSnapshot(snap => {
+    const next = {};
+    for (const d of snap.docs) { const w = d.data() && d.data().w; if (w && typeof w === 'object') next[d.id] = sanitizeWeights(w); }
+    if (Date.now() < shared.dirtyUntil && shared.prefs[shared.me]) next[shared.me] = shared.prefs[shared.me];
+    shared.prefs = next;
+    heatDirty = true;
+    refreshProfiles().then(() => { requestDraw(); renderAll(); });
+  }, () => {});
+}
+function sanitizeWeights(w) { const o = {}; for (const c of S.CATS) { const v = Math.round(+w[c.id]); o[c.id] = isFinite(v) ? clamp(v, 0, 5) : S.DEFAULT_WEIGHTS[c.id]; } return o; }
+
+function renderAll() { renderSpot(); renderShortlist(); renderPrio(); }
+
+// ---------------- search ----------------
+const norm = s => s.toLowerCase().replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/ae/g, 'a').replace(/oe/g, 'o').replace(/ue/g, 'u')
+  .replace(/str\b\.?/g, 'strasse').replace(/\bpl\b\.?/g, 'platz').replace(/[^a-z0-9]+/g, ' ').trim();
+let streets = [];
+function prepareAddresses(raw) {
+  streets = raw.map(([name, pcs, hns, co], si) => ({ name, pcs, n: norm(name), hns: hns.split(','), co, si }));
+  let total = 0; for (const s of streets) total += s.hns.length;
+  const xs = new Float64Array(total), ys = new Float64Array(total), sidx = new Int32Array(total), hidx = new Int32Array(total);
+  let j = 0;
+  for (const s of streets) { const d = decode(s.co); s.xs = d.xs; s.ys = d.ys; for (let i = 0; i < d.xs.length; i++) { xs[j] = d.xs[i]; ys[j] = d.ys[i]; sidx[j] = s.si; hidx[j++] = i; } }
+  addrIndex = S.indexGroup({ xs, ys });
+  addrIndex.label = i => `${streets[sidx[i]].name} ${streets[sidx[i]].hns[hidx[i]]}`;
+}
+function findNumber(s, num) {
+  const n = num.toLowerCase(); let i = s.hns.findIndex(x => x.toLowerCase() === n);
+  if (i < 0) { const base = parseInt(n, 10); let bd = 1e9; s.hns.forEach((x, k) => { const v = parseInt(x, 10); if (isFinite(v) && Math.abs(v - base) < bd) { bd = Math.abs(v - base); i = k; } }); }
+  return i;
+}
+function runSearch(q) {
+  const raw = q.trim(); if (raw.length < 2) return [];
+  const out = [];
+  const m = /^(.*?[^\d\s,])[\s,]+(\d+\s*[a-zA-Z]?)$/.exec(raw);
+  const nq = norm(raw), sq = m ? norm(m[1]) : nq, num = m ? m[2].replace(/\s+/g, '') : null;
+  if (streets.length && sq.length >= 2) {
+    const hits = [];
+    for (const s of streets) { const i = s.n.indexOf(sq); if (i < 0) continue; hits.push([(i === 0 ? 0 : 1000) + s.n.length, s]); }
+    hits.sort((a, b) => a[0] - b[0]);
+    for (const [, s] of hits.slice(0, 6)) {
+      if (num) { const i = findNumber(s, num); if (i >= 0) out.push({ title: `${s.name} ${s.hns[i]}`, kind: s.pcs.split(' ')[0] || 'Address', x: s.xs[i], y: s.ys[i], z: 0.3 }); }
+      else {
+        const mid = Math.floor(s.xs.length / 2);
+        out.push({ title: s.name, kind: (s.pcs ? s.pcs + ' · ' : '') + `${s.hns.length} addresses`, x: s.xs[mid], y: s.ys[mid], z: 0.2, street: s });
+      }
+    }
+  }
+  for (const st of stations) if (norm(st.name).includes(nq)) { out.push({ title: st.name, kind: st.lines.join(' '), x: st.x, y: st.y, z: 0.22 }); if (out.length > 10) break; }
+  for (const qq of quarters) if (norm(qq.n).includes(nq)) out.push({ title: qq.n, kind: qq.k === 'suburb' ? 'Part of town' : 'Quarter', x: qq.x, y: qq.y, z: 0.14 });
+  for (const d of core.districtsDecoded) if (norm(d.name).includes(nq)) out.push({ title: d.name, kind: 'District', x: d.lx, y: d.ly, z: 0.1 });
+  return out.slice(0, 9);
+}
+const qEl = $('#q'), sugg = $('#sugg'); let results = [], active = -1;
+function showSugg() {
+  sugg.replaceChildren(...results.map((r, i) => h('li', { role: 'option', 'aria-selected': String(i === active), onmousedown: e => { e.preventDefault(); pick(i); } },
+    h('span', {}, r.title), h('span', { class: 'k' }, r.kind))));
+  if (!results.length && qEl.value.trim().length >= 2) sugg.replaceChildren(h('li', { 'aria-disabled': 'true' }, h('span', { class: 'muted' }, streets.length ? 'No match. Try the street name without the number.' : 'Loading addresses…')));
+  sugg.hidden = !qEl.value.trim() || document.activeElement !== qEl; qEl.setAttribute('aria-expanded', String(!sugg.hidden));
+}
+function pick(i) {
+  const r = results[i]; if (!r) return;
+  if (r.street && !/\d/.test(qEl.value)) { qEl.value = r.title + ' '; results = []; showSugg(); }
+  qEl.blur(); sugg.hidden = true;
+  selectPoint(r.x, r.y, { title: r.title }); flyTo(r.x, r.y, r.z);
+  if (matchMedia('(max-width: 980px)').matches) $('.mapwrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+qEl.addEventListener('input', () => { if (!core) return; results = runSearch(qEl.value); active = results.length ? 0 : -1; showSugg(); });
+qEl.addEventListener('focus', () => { if (core && qEl.value) { results = runSearch(qEl.value); showSugg(); } });
+qEl.addEventListener('blur', () => setTimeout(() => { sugg.hidden = true; qEl.setAttribute('aria-expanded', 'false'); }, 120));
+qEl.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown') { active = Math.min(results.length - 1, active + 1); showSugg(); e.preventDefault(); }
+  else if (e.key === 'ArrowUp') { active = Math.max(0, active - 1); showSugg(); e.preventDefault(); }
+  else if (e.key === 'Enter') { if (active >= 0) pick(active); e.preventDefault(); }
+  else if (e.key === 'Escape') { sugg.hidden = true; }
+});
+
+// ---------------- boot ----------------
+async function loadWalk() {
+  const r = await fetch('data/walk.txt'); if (!r.ok) throw new Error('walk');
+  const b64 = (await r.text()).trim(), bin = atob(b64), u8 = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  let ab = u8.buffer; const head = u8;
+  if (head[0] === 0x1f && head[1] === 0x8b) {
+    if (typeof DecompressionStream !== 'function') throw new Error('no gzip');
+    ab = await new Response(new Blob([ab]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+  }
+  const dv = new DataView(ab);
+  if (dv.getUint32(0, false) !== 0x574c4b31) throw new Error('bad walk data');
+  const nV = dv.getUint32(4, true), nE = dv.getUint32(8, true); let o = 12;
+  const evd = new Int32Array(ab, o, nE); o += 4 * nE;
+  const xs = new Int16Array(ab, o, nV); o += 2 * nV;
+  const ys = new Int16Array(ab, o, nV); o += 2 * nV;
+  const len = new Uint16Array(ab, o, nE); o += 2 * nE;
+  const cnt = new Uint8Array(ab, o, nV);
+  const eu = new Int32Array(nE), ev = new Int32Array(nE), el = new Float32Array(nE);
+  let e = 0;
+  for (let v = 0; v < nV; v++) for (let k = 0; k < cnt[v]; k++) { eu[e] = v; ev[e] = v + evd[e]; el[e] = len[e] / 10; e++; }
+  return S.makeGraph({ xs, ys, eu, ev, el });
+}
+async function boot() {
+  readTheme(); renderLayerSelect(); renderLegend(); renderTiers(); renderShortlist(); renderSpot();
+  const walkP = loadWalk().catch(() => null);
+  try {
+    const [c, m] = await Promise.all([fetch('data/core.json').then(r => r.json()), fetch('data/map.json').then(r => r.json())]);
+    core = c; mapData = m;
+  } catch (e) { $('#loading').textContent = 'The map data did not load. Reload the page to try again.'; return; }
+  const raw = {};
+  for (const [id, g] of Object.entries(core.groups)) { const d = decode(g.p); raw[id] = { xs: d.xs, ys: d.ys, keys: g.k, mult: g.m }; }
+  raw.park = S.sampleAreas(core.areas.list.map(a => ({ m: a.m, rings: a.r.map(r => { const d = decode(r), f = new Array(d.xs.length * 2); for (let i = 0; i < d.xs.length; i++) { f[2 * i] = d.xs[i]; f[2 * i + 1] = d.ys[i]; } return f; }) })));
+  const bin = atob(core.grid.b64); gridBytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) gridBytes[i] = bin.charCodeAt(i);
+  core.districtsDecoded = core.districts.map(d => {
+    const o = d.o.map(decode), i = (d.i || []).map(decode);
+    const big = o.reduce((a, r) => r.xs.length > a.xs.length ? r : a, o[0]);
+    let lx = 0, ly = 0; for (let k = 0; k < big.xs.length; k++) { lx += big.xs[k]; ly += big.ys[k]; }
+    lx /= big.xs.length; ly /= big.xs.length;
+    const short = d.name.split(/[-–]/)[0].replace(/^Stadtbezirk\s*/, '');
+    return { name: d.name, short, o, i, lx, ly };
+  });
+  quarters = core.places.filter(p => p.k !== 'neighbourhood' || true).map(p => ({ n: p.n, k: p.k, x: p.x, y: p.y }))
+    .sort((a, b) => (a.k === 'suburb' ? 0 : a.k === 'quarter' ? 1 : 2) - (b.k === 'suburb' ? 0 : b.k === 'quarter' ? 1 : 2));
+  const stMap = new Map();
+  for (const mode of ['rail', 'tram']) {
+    const g = core.groups[mode], d = decode(g.p);
+    g.n.forEach((name, i) => {
+      if (!name) return; const key = name;
+      if (!stMap.has(key)) stMap.set(key, { name, x: d.xs[i], y: d.ys[i], mode, lines: [] });
+      const st = stMap.get(key); const ln = core.lines[g.k[i]];
+      if (mode === 'rail' && st.mode !== 'rail') { st.mode = 'rail'; st.x = d.xs[i]; st.y = d.ys[i]; }
+      const lab = ln.mode === 'tram' ? 'Tram ' + ln.ref : ln.ref; if (!st.lines.includes(lab)) st.lines.push(lab);
+    });
+  }
+  stations = [...stMap.values()].sort((a, b) => (a.mode === 'rail' ? 0 : 1) - (b.mode === 'rail' ? 0 : 1) || b.lines.length - a.lines.length);
+  $('#datanote').textContent = `Data: OpenStreetMap, downloaded ${new Date(core.built).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. Shops open and close, and some may be missing.`;
+  buildPaths(); $('#loading').hidden = true;
+  view.init = false; resize(); renderSpot();
+  const graph = await walkP;
+  prepared = S.prepare(raw, graph);
+  if (!graph) $('#datanote').textContent += ' The street network did not load, so walking times are estimated from straight-line distance.';
+  const [ex, ey] = S.toXY(48.13155, 11.57585);
+  selectPoint(ex, ey, { title: 'Gärtnerplatz', example: true });
+  renderAll();
+  initShared();
+  fetch('data/addr.json').then(r => r.json()).then(a => { prepareAddresses(a); if (qEl.value && document.activeElement === qEl) { results = runSearch(qEl.value); showSugg(); } }).catch(() => {});
+}
+boot();
+})();
+</script>
+
+</body>
+</html>
